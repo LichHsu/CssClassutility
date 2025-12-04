@@ -117,6 +117,10 @@ public partial class Program
     // 偵錯用：設定 Log 檔案路徑 (會產生在 exe 同層目錄)
     private static readonly string _logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp_debug_log.txt");
 
+    // 測試模式開關
+    private static bool _isTestingMode = false;
+    private static readonly string _testCssPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test.css");
+
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = false, // 必須為 false，MCP 是一行一個 JSON
@@ -136,6 +140,13 @@ public partial class Program
         // 1. 設定乾淨的 UTF8
         Console.OutputEncoding = new UTF8Encoding(false);
         Console.InputEncoding = new UTF8Encoding(false);
+
+        // 檢查是否為測試模式
+        if (args.Length > 0 && args[0] == "--test")
+        {
+            TestAllFunctions();
+            return;
+        }
 
         // 2. 啟動記錄
         Log("=== Server Started ===");
@@ -592,12 +603,227 @@ public partial class Program
     // 簡單的檔案寫入 Log
     private static void Log(string message)
     {
+        if (!_isTestingMode) return;
+        try { File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}"); }
+        catch { }
+    }
+
+    /// <summary>
+    /// 測試所有功能（使用 test.css）
+    /// </summary>
+    private static void TestAllFunctions()
+    {
+        _isTestingMode = true;
+        Log("\n========== 開始執行全功能測試 ==========");
+
+        int totalTests = 0;
+        int passedTests = 0;
+        int failedTests = 0;
+
+        // 確保測試檔案存在
+        if (!File.Exists(_testCssPath))
+        {
+            Console.WriteLine($"[錯誤] 找不到測試檔案: {_testCssPath}");
+            return;
+        }
+
+        Console.WriteLine($"使用測試檔案: {_testCssPath}\n");
+
+        // === 測試 1: get_css_classes ===
+        totalTests++;
         try
         {
-            File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+            Log("[測試 1] get_css_classes");
+            var classes = CssParser.GetClasses(_testCssPath);
+            Console.WriteLine($"✓ 測試 1: get_css_classes - 找到 {classes.Count} 個 classes");
+            passedTests++;
         }
-        catch { /* 忽略 Log 寫入失敗，避免遞迴錯誤 */ }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 1 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 1: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 2: update_css_class ===
+        totalTests++;
+        try
+        {
+            Log("[測試 2] update_css_class");
+            string result = CssParser.UpdateClassProperty(_testCssPath, "update-test", "border", "2px solid red", "Set");
+            Console.WriteLine($"✓ 測試 2: update_css_class - {result}");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 2 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 2: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 3: compare_css_style ===
+        totalTests++;
+        try
+        {
+            Log("[測試 3] compare_css_style");
+            var result = CssParser.CompareCssStyle("color: red; padding: 10px;", "padding: 10px; color: red;");
+            if (result.IsIdentical)
+            {
+                Console.WriteLine("✓ 測試 3: compare_css_style - 成功比較樣式");
+                passedTests++;
+            }
+            else
+            {
+                Console.WriteLine("✗ 測試 3: 樣式比較失敗（應該相同）");
+                failedTests++;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 3 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 3: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 4: convert_to_css_json ===
+        totalTests++;
+        try
+        {
+            Log("[測試 4] convert_to_css_json");
+            var entity = CssParser.ConvertToCssJson(_testCssPath, "test-single-prop");
+            Console.WriteLine($"✓ 測試 4: convert_to_css_json - 轉換為 JSON，屬性數: {entity.Properties.Count}");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 4 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 4: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 5: convert_from_css_json ===
+        totalTests++;
+        try
+        {
+            Log("[測試 5] convert_from_css_json");
+            var entity = new CssEntity
+            {
+                Name = "test",
+                Selector = ".test",
+                Properties = new SortedDictionary<string, string> { { "color", "blue" } }
+            };
+            string css = CssParser.ConvertFromCssJson(entity);
+            Console.WriteLine($"✓ 測試 5: convert_from_css_json - 成功轉換回 CSS");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 5 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 5: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 6: diagnosis_css_struct ===
+        totalTests++;
+        try
+        {
+            Log("[測試 6] diagnosis_css_struct");
+            var diagnosis = CssParser.DiagnosisCssStruct(_testCssPath);
+            Console.WriteLine($"✓ 測試 6: diagnosis_css_struct - 有效性: {diagnosis.IsValid}, 重複 classes: {diagnosis.DuplicateClasses.Count}");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 6 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 6: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 7: get_duplicate_classes ===
+        totalTests++;
+        try
+        {
+            Log("[測試 7] get_duplicate_classes");
+            var duplicates = CssParser.GetDuplicateClasses(_testCssPath);
+            Console.WriteLine($"✓ 測試 7: get_duplicate_classes - 找到 {duplicates.Count} 個重複 classes");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 7 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 7: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 8: take_css_class ===
+        totalTests++;
+        try
+        {
+            Log("[測試 8] take_css_class");
+            string cssText = CssParser.TakeCssClass(_testCssPath, "test-single-prop", 0);
+            Console.WriteLine($"✓ 測試 8: take_css_class - 成功取得 CSS 文字（長度: {cssText.Length}）");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 8 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 8: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 9: restructure_css (創建副本測試) ===
+        totalTests++;
+        try
+        {
+            Log("[測試 9] restructure_css");
+            string testCopy = _testCssPath.Replace(".css", "_copy.css");
+            File.Copy(_testCssPath, testCopy, true);
+            string result = CssParser.RestructureCss(testCopy);
+            Console.WriteLine($"✓ 測試 9: restructure_css - {result}");
+            File.Delete(testCopy);
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 9 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 9: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 10: merge_css_class ===
+        totalTests++;
+        try
+        {
+            Log("[測試 10] merge_css_class");
+            string testCopy = _testCssPath.Replace(".css", "_merge.css");
+            File.Copy(_testCssPath, testCopy, true);
+            // 將路徑中的反斜線轉為正斜線以符合格式要求
+            string sourceObj = $"{testCopy.Replace("\\", "/")}:.merge-source-overwrite";
+            string result = CssParser.MergeCssClass(testCopy, "merge-target", sourceObj, MergeStrategy.Overwrite);
+            Console.WriteLine($"✓ 測試 10: merge_css_class - {result}");
+            File.Delete(testCopy);
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 10 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 10: {ex}");
+            failedTests++;
+        }
+
+        // 輸出測試摘要
+        Console.WriteLine("\n========== 測試摘要 ==========");
+        Console.WriteLine($"總測試數: {totalTests}");
+        Console.WriteLine($"通過: {passedTests}");
+        Console.WriteLine($"失敗: {failedTests}");
+        Console.WriteLine($"成功率: {(passedTests * 100.0 / totalTests):F1}%");
+
+        Log($"\n測試完成 - 通過: {passedTests}/{totalTests}");
+
+        Console.WriteLine($"\n詳細日誌已寫入: {_logPath}");
+        Console.WriteLine("============================\n");
     }
+
 }
 
 // --- 核心邏輯 CssParser ---
@@ -605,7 +831,7 @@ public partial class CssParser
 {
     [GeneratedRegex(@"\s+")]
     private static partial Regex timeRule();
-    [GeneratedRegex(@"(.+\.css):\\.?(.+)")]
+    [GeneratedRegex(@"(.+\.css):\.?(.+)")]
     private static partial Regex cssRule();
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -1306,6 +1532,6 @@ public partial class CssParser
         return modified;
     }
 
-
     #endregion
+
 }
