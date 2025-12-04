@@ -203,7 +203,7 @@ public static class DesignTokenAnalyzer
     {
         color = color.Trim().ToLower();
         // 將 3 位 hex 轉為 6 位
-        if (color.StartsWith("#") && color.Length == 4)
+        if (color.StartsWith('#') && color.Length == 4)
         {
             color = $"#{color[1]}{color[1]}{color[2]}{color[2]}{color[3]}{color[3]}";
         }
