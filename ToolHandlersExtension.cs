@@ -96,6 +96,55 @@ public partial class Program
                     },
                     required = new[] { "targetPath", "targetClassName", "sourcePath", "sourceClassName" }
                 }
+            },
+            // 18. identify_design_tokens
+            new
+            {
+                name = "identify_design_tokens",
+                description = "識別 CSS 檔案中可轉換為設計 token 的值（顏色、間距、字體等），回傳重複值的統計與建議的 token 名稱。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
+                        minOccurrences = new { type = "integer", description = "最少出現次數才納入建議（預設 2）" }
+                    },
+                    required = new[] { "path" }
+                }
+            },
+            // 19. trace_css_usage
+            new
+            {
+                name = "trace_css_usage",
+                description = "追蹤 CSS class 在專案中的使用位置（支援 HTML/Razor/JSX/Vue），回傳所有使用該 class 的檔案與行號。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        className = new { type = "string", description = "要追蹤的 class 名稱（不含點號）" },
+                        projectRoot = new { type = "string", description = "專案根目錄路徑" },
+                        fileExtensions = new { type = "array", items = new { type = "string" }, description = "要搜尋的副檔名（例如 ['.razor', '.html']，預設包含常見格式）" }
+                    },
+                    required = new[] { "className", "projectRoot" }
+                }
+            },
+            // 20. suggest_css_refactoring
+            new
+            {
+                name = "suggest_css_refactoring",
+                description = "分析 CSS 檔案並提供智能重構建議（提取共用屬性、使用 token、合併相似 class 等）。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
+                        minPriority = new { type = "integer", description = "最低優先級（1-10，預設 1，數值越高代表越重要）" }
+                    },
+                    required = new[] { "path" }
+                }
             }
         ];
     }
@@ -112,6 +161,9 @@ public partial class Program
             "restructure_css" => HandleRestructureCss(args),
             "take_css_class" => HandleTakeCssClass(args),
             "merge_css_class_from_file" => HandleMergeCssClassFromFile(args),
+            "identify_design_tokens" => HandleIdentifyDesignTokens(args),
+            "trace_css_usage" => HandleTraceCssUsage(args),
+            "suggest_css_refactoring" => HandleSuggestRefactoring(args),
             _ => null // 不是擴充工具
         };
     }
@@ -159,5 +211,44 @@ public partial class Program
             targetPath, targetClassName, 
             sourcePath, sourceClassName, 
             strategy, targetIndex, sourceIndex);
+    }
+
+    private static string HandleIdentifyDesignTokens(JsonElement args)
+    {
+        string path = args.GetProperty("path").GetString()!;
+        int minOccurrences = args.TryGetProperty("minOccurrences", out var m) ? m.GetInt32() : 2;
+        
+        var result = CssParser.IdentifyDesignTokens(path, minOccurrences);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+    }
+
+    private static string HandleTraceCssUsage(JsonElement args)
+    {
+        string className = args.GetProperty("className").GetString()!;
+        string projectRoot = args.GetProperty("projectRoot").GetString()!;
+        string[]? extensions = null;
+        
+        if (args.TryGetProperty("fileExtensions", out var ext))
+        {
+            var list = new List<string>();
+            foreach (var item in ext.EnumerateArray())
+            {
+                var val = item.GetString();
+                if (val != null) list.Add(val);
+            }
+            extensions = list.ToArray();
+        }
+        
+        var result = CssParser.TraceCssUsage(className, projectRoot, extensions);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+    }
+
+    private static string HandleSuggestRefactoring(JsonElement args)
+    {
+        string path = args.GetProperty("path").GetString()!;
+        int minPriority = args.TryGetProperty("minPriority", out var p) ? p.GetInt32() : 1;
+        
+        var result = CssParser.SuggestRefactoring(path, minPriority);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 }

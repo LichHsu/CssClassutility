@@ -194,3 +194,67 @@
 }
 
 /* 此檔案應該有正確的大括號配對 */
+
+/* === AI 輔助功能測試資料 === */
+
+/* 測試 Token 識別 - 重複的顏色值 */
+.primary-button {
+    background-color: #3B82F6;
+    color: #ffffff;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.secondary-button {
+    background-color: #6B7280;
+    color: #ffffff;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.link-text {
+    color: #3B82F6;
+    font-size: 14px;
+}
+
+.link-button {
+    color: #3B82F6;
+    text-decoration: underline;
+}
+
+/* 測試重構建議 - 共同屬性（應建議提取） */
+.card-1 {
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.card-2 {
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: #f9f9f9;
+}
+
+.card-3 {
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: #eeeeee;
+}
+
+/* 測試相似 class（應建議合併） */
+.button-a {
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-b {
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
