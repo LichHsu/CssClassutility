@@ -158,45 +158,23 @@ public static class DesignTokenAnalyzer
 
     private static string GetColorName(string color)
     {
-        // 簡化的顏色命名（實際應使用更複雜的邏輯）
         var normalized = NormalizeColorValue(color).ToLower();
         if (normalized.Contains("fff")) return "white";
         if (normalized.Contains("000")) return "black";
-        if (normalized.StartsWith("#3b82f6") || normalized.StartsWith("#3b8")) return "primary-500";
-        if (normalized.StartsWith("#6b7280") || normalized.StartsWith("#6b7")) return "gray-500";
-        return normalized.Length > 7 ? normalized.Substring(1, 6) : normalized.Substring(1);
+        // 使用 Hex 值作為名稱後綴，移除特定顏色判斷
+        return normalized.StartsWith("#") ? normalized.Substring(1) : normalized;
     }
 
     private static string GetSpacingName(string spacing)
     {
-        // 提取數值
-        var match = Regex.Match(spacing, @"(\d+(?:\.\d+)?)");
-        if (match.Success)
-        {
-            var value = double.Parse(match.Groups[1].Value);
-            if (spacing.Contains("rem")) return ((int)(value * 4)).ToString();
-            if (spacing.Contains("px")) return ((int)(value / 4)).ToString();
-        }
-        return "custom";
+        // 直接使用原始數值，替換特殊字符
+        return spacing.Replace(".", "_").Replace("%", "pct");
     }
 
     private static string GetSizeName(string size)
     {
-        var match = Regex.Match(size, @"(\d+(?:\.\d+)?)");
-        if (match.Success)
-        {
-            var value = double.Parse(match.Groups[1].Value);
-            return value switch
-            {
-                <= 12 => "xs",
-                <= 14 => "sm",
-                <= 16 => "base",
-                <= 18 => "lg",
-                <= 24 => "xl",
-                _ => "2xl"
-            };
-        }
-        return "custom";
+        // 直接使用原始數值，替換特殊字符
+        return size.Replace(".", "_").Replace("%", "pct");
     }
 
     private static string NormalizeColorValue(string color)
