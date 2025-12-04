@@ -2,6 +2,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using CssClassutility.Testing;
+using CssClassutility.Operations;
 
 namespace CssClassutility;
 
@@ -117,10 +119,6 @@ public partial class Program
     // 偵錯用：設定 Log 檔案路徑 (會產生在 exe 同層目錄)
     private static readonly string _logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp_debug_log.txt");
 
-    // 測試模式開關
-    private static bool _isTestingMode = false;
-    private static readonly string _testCssPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test.css");
-
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = false, // 必須為 false，MCP 是一行一個 JSON
@@ -144,7 +142,7 @@ public partial class Program
         // 檢查是否為測試模式
         if (args.Length > 0 && args[0] == "--test")
         {
-            TestAllFunctions();
+            TestRunner.RunAllTests();
             return;
         }
 
@@ -603,227 +601,9 @@ public partial class Program
     // 簡單的檔案寫入 Log
     private static void Log(string message)
     {
-        if (!_isTestingMode) return;
         try { File.AppendAllText(_logPath, $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}"); }
         catch { }
     }
-
-    /// <summary>
-    /// 測試所有功能（使用 test.css）
-    /// </summary>
-    private static void TestAllFunctions()
-    {
-        _isTestingMode = true;
-        Log("\n========== 開始執行全功能測試 ==========");
-
-        int totalTests = 0;
-        int passedTests = 0;
-        int failedTests = 0;
-
-        // 確保測試檔案存在
-        if (!File.Exists(_testCssPath))
-        {
-            Console.WriteLine($"[錯誤] 找不到測試檔案: {_testCssPath}");
-            return;
-        }
-
-        Console.WriteLine($"使用測試檔案: {_testCssPath}\n");
-
-        // === 測試 1: get_css_classes ===
-        totalTests++;
-        try
-        {
-            Log("[測試 1] get_css_classes");
-            var classes = CssParser.GetClasses(_testCssPath);
-            Console.WriteLine($"✓ 測試 1: get_css_classes - 找到 {classes.Count} 個 classes");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 1 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 1: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 2: update_css_class ===
-        totalTests++;
-        try
-        {
-            Log("[測試 2] update_css_class");
-            string result = CssParser.UpdateClassProperty(_testCssPath, "update-test", "border", "2px solid red", "Set");
-            Console.WriteLine($"✓ 測試 2: update_css_class - {result}");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 2 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 2: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 3: compare_css_style ===
-        totalTests++;
-        try
-        {
-            Log("[測試 3] compare_css_style");
-            var result = CssParser.CompareCssStyle("color: red; padding: 10px;", "padding: 10px; color: red;");
-            if (result.IsIdentical)
-            {
-                Console.WriteLine("✓ 測試 3: compare_css_style - 成功比較樣式");
-                passedTests++;
-            }
-            else
-            {
-                Console.WriteLine("✗ 測試 3: 樣式比較失敗（應該相同）");
-                failedTests++;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 3 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 3: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 4: convert_to_css_json ===
-        totalTests++;
-        try
-        {
-            Log("[測試 4] convert_to_css_json");
-            var entity = CssParser.ConvertToCssJson(_testCssPath, "test-single-prop");
-            Console.WriteLine($"✓ 測試 4: convert_to_css_json - 轉換為 JSON，屬性數: {entity.Properties.Count}");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 4 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 4: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 5: convert_from_css_json ===
-        totalTests++;
-        try
-        {
-            Log("[測試 5] convert_from_css_json");
-            var entity = new CssEntity
-            {
-                Name = "test",
-                Selector = ".test",
-                Properties = new SortedDictionary<string, string> { { "color", "blue" } }
-            };
-            string css = CssParser.ConvertFromCssJson(entity);
-            Console.WriteLine($"✓ 測試 5: convert_from_css_json - 成功轉換回 CSS");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 5 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 5: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 6: diagnosis_css_struct ===
-        totalTests++;
-        try
-        {
-            Log("[測試 6] diagnosis_css_struct");
-            var diagnosis = CssParser.DiagnosisCssStruct(_testCssPath);
-            Console.WriteLine($"✓ 測試 6: diagnosis_css_struct - 有效性: {diagnosis.IsValid}, 重複 classes: {diagnosis.DuplicateClasses.Count}");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 6 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 6: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 7: get_duplicate_classes ===
-        totalTests++;
-        try
-        {
-            Log("[測試 7] get_duplicate_classes");
-            var duplicates = CssParser.GetDuplicateClasses(_testCssPath);
-            Console.WriteLine($"✓ 測試 7: get_duplicate_classes - 找到 {duplicates.Count} 個重複 classes");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 7 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 7: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 8: take_css_class ===
-        totalTests++;
-        try
-        {
-            Log("[測試 8] take_css_class");
-            string cssText = CssParser.TakeCssClass(_testCssPath, "test-single-prop", 0);
-            Console.WriteLine($"✓ 測試 8: take_css_class - 成功取得 CSS 文字（長度: {cssText.Length}）");
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 8 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 8: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 9: restructure_css (創建副本測試) ===
-        totalTests++;
-        try
-        {
-            Log("[測試 9] restructure_css");
-            string testCopy = _testCssPath.Replace(".css", "_copy.css");
-            File.Copy(_testCssPath, testCopy, true);
-            string result = CssParser.RestructureCss(testCopy);
-            Console.WriteLine($"✓ 測試 9: restructure_css - {result}");
-            File.Delete(testCopy);
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 9 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 9: {ex}");
-            failedTests++;
-        }
-
-        // === 測試 10: merge_css_class ===
-        totalTests++;
-        try
-        {
-            Log("[測試 10] merge_css_class");
-            string testCopy = _testCssPath.Replace(".css", "_merge.css");
-            File.Copy(_testCssPath, testCopy, true);
-            // 將路徑中的反斜線轉為正斜線以符合格式要求
-            string sourceObj = $"{testCopy.Replace("\\", "/")}:.merge-source-overwrite";
-            string result = CssParser.MergeCssClass(testCopy, "merge-target", sourceObj, MergeStrategy.Overwrite);
-            Console.WriteLine($"✓ 測試 10: merge_css_class - {result}");
-            File.Delete(testCopy);
-            passedTests++;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ 測試 10 失敗: {ex.Message}");
-            Log($"[錯誤] 測試 10: {ex}");
-            failedTests++;
-        }
-
-        // 輸出測試摘要
-        Console.WriteLine("\n========== 測試摘要 ==========");
-        Console.WriteLine($"總測試數: {totalTests}");
-        Console.WriteLine($"通過: {passedTests}");
-        Console.WriteLine($"失敗: {failedTests}");
-        Console.WriteLine($"成功率: {(passedTests * 100.0 / totalTests):F1}%");
-
-        Log($"\n測試完成 - 通過: {passedTests}/{totalTests}");
-
-        Console.WriteLine($"\n詳細日誌已寫入: {_logPath}");
-        Console.WriteLine("============================\n");
-    }
-
 }
 
 // --- 核心邏輯 CssParser ---
@@ -1398,7 +1178,7 @@ public partial class CssParser
         {
             string json = JsonSerializer.Serialize(target, _jsonOptions);
             File.WriteAllText(targetPath, json, Encoding.UTF8);
-            return $"已合併實體 ({strategy}): {targetPath}";
+            return $"已合併實體: {targetPath} ({strategy})";
         }
 
         return $"實體未變更: {targetPath}";
@@ -1406,90 +1186,22 @@ public partial class CssParser
 
     #endregion
 
-    #region CSS 屬性更新
-
-    /// <summary>
-    /// 直接修改 CSS 檔案中的 Class 屬性
-    /// </summary>
-    public static string UpdateClassProperty(string path, string className, string key, string value, string action)
-    {
-        var classes = GetClasses(path);
-        var target = classes.FirstOrDefault(c => c.ClassName.Equals(className, StringComparison.OrdinalIgnoreCase));
-        if (target == null) return $"警告: 在 {path} 中找不到 Class .{className}";
-
-        var props = ContentToProperties(target.Content);
-        bool modified = false;
-        string lowerKey = key.ToLower().Trim();
-
-        if (action.Equals("Set", StringComparison.OrdinalIgnoreCase))
-        {
-            if (!props.TryGetValue(lowerKey, out string? oldVal) || oldVal != value)
-            {
-                props[lowerKey] = value;
-                modified = true;
-            }
-        }
-        else if (action.Equals("Remove", StringComparison.OrdinalIgnoreCase))
-        {
-            if (props.Remove(lowerKey)) modified = true;
-        }
-
-        if (!modified) return $"未變更: .{className}";
-
-        string newCssContent = PropertiesToContent(props, target.Selector);
-        ReplaceBlock(path, target.StartIndex, target.BlockEnd, newCssContent);
-
-        return $"已成功更新 CSS Class: .{className}";
-    }
-
-    #endregion
-
-    #region 私有輔助方法
+    #region 輔助方法
 
     private static Dictionary<string, string> ContentToProperties(string content)
     {
-        var props = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var cleanContent = CommentPattern().Replace(content, "");
-
-        foreach (var prop in cleanContent.Split(';'))
+        var dict = new Dictionary<string, string>();
+        var props = content.Split(';');
+        foreach (var p in props)
         {
-            var parts = prop.Split([':',], 2);
+            if (string.IsNullOrWhiteSpace(p)) continue;
+            var parts = p.Split(':', 2);
             if (parts.Length == 2)
             {
-                string key = parts[0].Trim().ToLower();
-                string val = parts[1].Trim();
-                if (!string.IsNullOrEmpty(key)) props[key] = val;
+                dict[parts[0].Trim()] = parts[1].Trim();
             }
         }
-        return props;
-    }
-
-    private static string PropertiesToContent(Dictionary<string, string> props, string selector)
-    {
-        var sb = new StringBuilder();
-        sb.Append(selector).Append(" {\n");
-        foreach (var key in props.Keys.OrderBy(k => k))
-        {
-            sb.Append($"    {key}: {props[key]};\n");
-        }
-        sb.Append('}');
-        return sb.ToString();
-    }
-
-    private static void ReplaceBlock(string path, int startIndex, int endIndex, string newContent)
-    {
-        string backupPath = $"{path}.bak";
-        File.Copy(path, backupPath, true);
-
-        string content = File.ReadAllText(path);
-        int lengthToRemove = endIndex - startIndex + 1;
-
-        if (startIndex < 0 || startIndex + lengthToRemove > content.Length)
-            throw new IndexOutOfRangeException("檔案內容在處理過程中發生變化。");
-
-        string tempContent = content.Remove(startIndex, lengthToRemove);
-        string finalContent = tempContent.Insert(startIndex, newContent);
-        File.WriteAllText(path, finalContent, Encoding.UTF8);
+        return dict;
     }
 
     private static bool MergeProperties(SortedDictionary<string, string> target, SortedDictionary<string, string> source, MergeStrategy strategy)
@@ -1501,37 +1213,47 @@ public partial class CssParser
             string key = kvp.Key;
             string val = kvp.Value;
 
-            switch (strategy)
+            if (strategy == MergeStrategy.Overwrite)
             {
-                case MergeStrategy.Overwrite:
-                    if (!target.TryGetValue(key, out string? existingVal) || existingVal != val)
-                    {
-                        target[key] = val;
-                        modified = true;
-                    }
-                    break;
-
-                case MergeStrategy.FillMissing:
-                    if (!target.ContainsKey(key))
-                    {
-                        target[key] = val;
-                        modified = true;
-                    }
-                    break;
-
-                case MergeStrategy.PruneDuplicate:
-                    if (target.TryGetValue(key, out string? targetVal) && targetVal == val)
-                    {
-                        target.Remove(key);
-                        modified = true;
-                    }
-                    break;
+                if (!target.ContainsKey(key) || target[key] != val)
+                {
+                    target[key] = val;
+                    modified = true;
+                }
+            }
+            else if (strategy == MergeStrategy.FillMissing)
+            {
+                if (!target.ContainsKey(key))
+                {
+                    target[key] = val;
+                    modified = true;
+                }
+            }
+            else if (strategy == MergeStrategy.PruneDuplicate)
+            {
+                if (target.ContainsKey(key) && target[key] == val)
+                {
+                    target.Remove(key);
+                    modified = true;
+                }
             }
         }
 
         return modified;
     }
 
-    #endregion
+    private static void ReplaceBlock(string path, int start, int end, string newContent)
+    {
+        string content = File.ReadAllText(path);
+        string before = content.Substring(0, start);
+        string after = content.Substring(end + 1);
+        File.WriteAllText(path, before + newContent + after, Encoding.UTF8);
+    }
 
+    public static string UpdateClassProperty(string path, string className, string key, string value, string action)
+    {
+        return CssUpdater.UpdateClassProperty(path, className, key, value, action);
+    }
+
+    #endregion
 }

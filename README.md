@@ -4,7 +4,7 @@
 
 ## 🌟 專案簡介
 
-**CssClassutility** 是一個以 C# 開發的 MCP 伺服器，提供 **20 個專業工具**來協助 AI 代理進行 CSS 檔案的解析、操作、診斷與重構。特別適合用於：
+**CssClassutility** 是一個以 C# 開發的 MCP 伺服器，提供 **22 個專業工具**來協助 AI 代理進行 CSS 檔案的解析、操作、診斷與重構。特別適合用於：
 
 - 🔧 CSS 程式碼重構與優化
 - 🎨 建立與管理設計系統
@@ -43,13 +43,15 @@
 | `take_css_class`            | 回傳指定 Class 的原始 CSS 文字                        |
 | `merge_css_class_from_file` | 從另一個 CSS 檔案合併指定 Class 的屬性                |
 
-### 🤖 AI 輔助工具（工具 18-20）⭐ 新增
+### 🤖 AI 輔助與分析工具（工具 18-22）⭐ 新增
 
-| 工具名稱                  | 功能說明                                                       |
-| ------------------------- | -------------------------------------------------------------- |
-| `identify_design_tokens`  | 識別可轉換為設計 token 的硬編碼值（顏色、間距、字體等）        |
-| `trace_css_usage`         | 追蹤 CSS class 在專案中的使用位置（支援 HTML/Razor/JSX/Vue）   |
-| `suggest_css_refactoring` | 分析 CSS 並提供智能重構建議（提取共用屬性、合併相似 class 等） |
+| 工具名稱                        | 功能說明                                                       |
+| ------------------------------- | -------------------------------------------------------------- |
+| `identify_design_tokens`        | 識別可轉換為設計 token 的硬編碼值（顏色、間距、字體等）        |
+| `trace_css_usage`               | 追蹤 CSS class 在專案中的使用位置（支援 HTML/Razor/JSX/Vue）   |
+| `suggest_css_refactoring`       | 分析 CSS 並提供智能重構建議（提取共用屬性、合併相似 class 等） |
+| `batch_replace_property_values` | 在多個 class 中批次替換特定屬性值（支援正則表達式）            |
+| `analyze_variable_impact`       | 分析修改某個 CSS 變數會影響哪些 class（包括直接與間接引用）    |
 
 ---
 
@@ -186,31 +188,28 @@ dotnet run --project CssClassutility.csproj -- --test
 }
 ```
 
-### 範例 4：更新 CSS 屬性
+### 範例 4：批次替換屬性值
 
 ```json
 {
-  "name": "update_css_class",
+  "name": "batch_replace_property_values",
   "arguments": {
     "path": "d:\\project\\styles.css",
-    "className": "btn-primary",
-    "key": "background-color",
-    "value": "var(--color-primary)",
-    "action": "Set"
+    "oldValue": "#333",
+    "newValue": "var(--text-primary)",
+    "propertyFilter": "color"
   }
 }
 ```
 
-### 範例 5：合併 CSS Class
+### 範例 5：分析變數影響
 
 ```json
 {
-  "name": "merge_css_class",
+  "name": "analyze_variable_impact",
   "arguments": {
-    "targetPath": "d:\\project\\styles.css",
-    "targetClassName": "btn-base",
-    "sourceObject": "d:/project/components.css:.btn-primary",
-    "strategy": "FillMissing"
+    "path": "d:\\project\\styles.css",
+    "variableName": "--primary-color"
   }
 }
 ```
@@ -223,7 +222,7 @@ dotnet run --project CssClassutility.csproj -- --test
 
 1. 使用 `identify_design_tokens` 掃描所有 CSS 檔案
 2. 分析重複值，決定需要建立的 token
-3. 使用 `update_css_class` 批次替換硬編碼值為 CSS 變數
+3. 使用 `batch_replace_property_values` 批次替換硬編碼值為 CSS 變數
 
 ### 場景 2：安全重構 CSS
 
@@ -275,11 +274,15 @@ dotnet run --project CssClassutility.csproj -- --test
 
 ```
 CssClassutility/
-├── Program.cs                   # 主程式與 MCP 協議實作
-├── Models.cs                    # 資料模型定義（20 個類別）
-├── CssParserExtensions.cs       # CSS 解析器擴充功能（診斷、重構、AI 工具）
-├── ToolHandlersExtension.cs     # MCP 工具處理器
-├── test.css                     # 測試資料
+├── AI/                          # AI 分析與建議邏輯 (DesignTokenAnalyzer, RefactoringAdvisor, UsageTracer)
+├── Core/                        # 核心資料模型與比較邏輯 (CssDataModels, CssComparator)
+├── Diagnostics/                 # 診斷與結構檢查 (StructureDiagnostic, DuplicateDetector)
+├── MCP/                         # MCP 協議模型 (JsonRpcModels)
+├── Models/                      # 資料模型定義 (AIModels, DiagnosticModels)
+├── Operations/                  # CSS 修改與操作邏輯 (CssUpdater, CssMerger, CssRemover)
+├── Testing/                     # 測試執行器 (TestRunner)
+├── Program.cs                   # 主程式與 MCP 入口點
+├── ToolHandlersExtension.cs     # 工具處理器擴充
 └── README.md                    # 專案文件
 ```
 
@@ -292,14 +295,14 @@ CssClassutility/
 
 ### 測試
 
-執行全功能測試（共 20 個測試案例）：
+執行全功能測試（共 22 個測試案例）：
 ```bash
 cd "d:\Lichs Projects\MCP\CssClassutility"
 dotnet run -- --test
 ```
 
 測試會驗證：
-- ✅ 所有 20 個 MCP 工具的正確性
+- ✅ 所有 22 個 MCP 工具的正確性
 - ✅ CSS 解析與修改的準確性
 - ✅ JSON 轉換的完整性
 - ✅ 診斷與重構功能
@@ -310,11 +313,14 @@ dotnet run -- --test
 ## 📝 版本歷史
 
 ### v2.0.0（2025-12-04）
-- ✨ 新增 3 個 AI 輔助工具
+- ✨ 新增 5 個 AI 輔助與分析工具
   - `identify_design_tokens` - 設計 token 識別
   - `trace_css_usage` - CSS 使用追蹤
   - `suggest_css_refactoring` - 智能重構建議
-- 📊 總工具數量達到 20 個
+  - `batch_replace_property_values` - 批次屬性替換
+  - `analyze_variable_impact` - 變數影響分析
+- 🏗️ 專案架構重構：模組化拆分為 Core, AI, Diagnostics, Operations 等目錄
+- 📊 總工具數量達到 22 個
 - 🔧 改進錯誤處理與日誌記錄
 
 ### v1.0.0
