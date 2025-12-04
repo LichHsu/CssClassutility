@@ -428,7 +428,9 @@ public partial class Program
                     },
                     required = new[] { "targetPath", "sourcePath" }
                 }
-            }
+            },
+            // === 擴充工具 ===
+            ..GetExtendedToolDefinitions()
         ];
     }
 
@@ -439,6 +441,11 @@ public partial class Program
     {
         string name = paramsEl.GetProperty("name").GetString() ?? "";
         JsonElement args = paramsEl.GetProperty("arguments");
+
+        // 先嘗試擴充工具
+        string? extResult = HandleExtendedToolCall(name, args);
+        if (extResult != null)
+            return new { content = new[] { new { type = "text", text = extResult } } };
 
         string resultText = name switch
         {
