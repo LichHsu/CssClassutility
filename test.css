@@ -41,19 +41,22 @@
 
 /* === 群組選擇器 === */
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
     padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
 }
 
-.text-center, .text-right, .text-left {
+.text-center,
+.text-right,
+.text-left {
     display: block;
 }
 
 /* === 複雜選擇器 === */
 
-.container > .item {
+.container>.item {
     margin: 5px;
 }
 
@@ -68,8 +71,7 @@
 
 /* === 空 Class === */
 
-.empty-class {
-}
+.empty-class {}
 
 /* === 包含註解的 Class === */
 
@@ -178,6 +180,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -226,21 +229,21 @@
 .card-1 {
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     background: white;
 }
 
 .card-2 {
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     background: #f9f9f9;
 }
 
 .card-3 {
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     background: #eeeeee;
 }
 
@@ -257,4 +260,52 @@
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
+}
+
+/* === 批次替換與變數分析測試 === */
+
+:root {
+    --primary-color: #3B82F6;
+    --spacing-base: 16px;
+    --secondary-color: var(--primary-color);
+    --link-color: var(--primary-color);
+}
+
+.batch-test-1 {
+    padding: 16px;
+    margin: 16px;
+    color: #3B82F6;
+}
+
+.batch-test-2 {
+    padding: 16px 24px;
+    color: #3B82F6;
+    font-size: 14px;
+}
+
+.batch-test-3 {
+    border: 1px solid #3B82F6;
+    padding: 8px 16px;
+}
+
+.var-direct-1 {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.var-direct-2 {
+    background: var(--primary-color);
+}
+
+.var-indirect-1 {
+    color: var(--secondary-color);
+}
+
+.var-indirect-2 {
+    border-color: var(--link-color);
+}
+
+.var-spacing {
+    padding: var(--spacing-base);
+    margin: var(--spacing-base);
 }

@@ -970,4 +970,212 @@ public partial class CssParser
     }
 
     #endregion
+
+    #region 批次操作與變數分析
+
+    /// <summary>
+    /// 批次替換CSS屬性值
+    /// </summary>
+    public static BatchReplaceResult BatchReplacePropertyValues(
+        string cssPath,
+        string oldValue,
+        string newValue,
+        string? propertyFilter = null,
+        bool useRegex = false)
+    {
+        if (!File.Exists(cssPath))
+            throw new FileNotFoundException("找不到檔案", cssPath);
+
+        var result = new BatchReplaceResult();
+        
+        // 建立備份
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string backupPath = $"{cssPath}.batch_backup_{timestamp}";
+        File.Copy(cssPath, backupPath, true);
+        result.BackupPath = backupPath;
+
+        try
+        {
+            var classes = GetClasses(cssPath);
+            string content = File.ReadAllText(cssPath);
+            var affectedClassNames = new HashSet<string>();
+
+            foreach (var cssClass in classes)
+            {
+                var props = ContentToPropertiesPublic(cssClass.Content);
+                bool classModified = false;
+
+                foreach (var prop in props.ToList())
+                {
+                    // 檢查屬性篩選
+                    if (propertyFilter != null && !prop.Key.Equals(propertyFilter, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    bool shouldReplace = false;
+                    string actualOldValue = prop.Value;
+
+                    // 判斷是否需要替換
+                    if (useRegex)
+                    {
+                        if (Regex.IsMatch(prop.Value, oldValue))
+                        {
+                            shouldReplace = true;
+                        }
+                    }
+                    else
+                    {
+                        if (prop.Value == oldValue)
+                        {
+                            shouldReplace = true;
+                        }
+                    }
+
+                    if (shouldReplace)
+                    {
+                        // 執行替換
+                        string replacedValue = useRegex
+                            ? Regex.Replace(prop.Value, oldValue, newValue)
+                            : newValue;
+
+                        props[prop.Key] = replacedValue;
+                        classModified = true;
+
+                        // 記錄替換詳情
+                        result.Replacements.Add(new ReplacementDetail
+                        {
+                            ClassName = cssClass.ClassName,
+                            Property = prop.Key,
+                            OldValue = actualOldValue,
+                            NewValue = replacedValue
+                        });
+
+                        result.TotalMatches++;
+                        affectedClassNames.Add(cssClass.ClassName);
+                    }
+                }
+
+                // 如果這個 class 有修改，更新檔案
+                if (classModified)
+                {
+                    string newCssContent = PropertiesToContentPublic(props, cssClass.Selector);
+                    ReplaceBlockPublic(cssPath, cssClass.StartIndex, cssClass.BlockEnd, newCssContent);
+                    
+                    // 重新讀取檔案（因為位置可能改變）
+                    content = File.ReadAllText(cssPath);
+                    classes = GetClasses(cssPath);
+                }
+            }
+
+            result.AffectedClasses = affectedClassNames.ToList();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // 發生錯誤，恢復備份
+            File.Copy(backupPath, cssPath, true);
+            throw new Exception($"批次替換失敗：{ex.Message}（已從備份還原）", ex);
+        }
+    }
+
+    /// <summary>
+    /// 分析CSS變數的影響範圍
+    /// </summary>
+    public static VariableImpactAnalysis AnalyzeVariableImpact(string cssPath, string variableName)
+    {
+        if (!File.Exists(cssPath))
+            throw new FileNotFoundException("找不到檔案", cssPath);
+
+        // 確保變數名稱格式正確
+        if (!variableName.StartsWith("--"))
+            variableName = "--" + variableName;
+
+        var analysis = new VariableImpactAnalysis
+        {
+            VariableName = variableName
+        };
+
+        var classes = GetClasses(cssPath);
+        var variableDefinitions = new Dictionary<string, string>(); // 變數名稱 -> 值
+
+        // 第一階段：找出所有變數定義
+        foreach (var cssClass in classes)
+        {
+            // 檢查是否為 :root 或其他可能定義變數的選擇器
+            if (cssClass.Selector.Contains(":root") || cssClass.Selector.Contains("--"))
+            {
+                var props = ContentToPropertiesPublic(cssClass.Content);
+                foreach (var prop in props)
+                {
+                    if (prop.Key.StartsWith("--"))
+                    {
+                        variableDefinitions[prop.Key] = prop.Value;
+                        
+                        // 如果找到目標變數的定義
+                        if (prop.Key == variableName)
+                        {
+                            analysis.IsDefined = true;
+                            analysis.DefinedValue = prop.Value;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 第二階段：找出所有使用此變數的地方
+        var varPattern = new Regex($@"var\(\s*{Regex.Escape(variableName)}(?:\s*,\s*([^)]+))?\s*\)", RegexOptions.Compiled);
+        
+        foreach (var cssClass in classes)
+        {
+            var props = ContentToPropertiesPublic(cssClass.Content);
+            
+            foreach (var prop in props)
+            {
+                var match = varPattern.Match(prop.Value);
+                if (match.Success)
+                {
+                    // 直接使用此變數
+                    analysis.DirectUsages.Add(new VariableUsage
+                    {
+                        ClassName = cssClass.ClassName,
+                        Property = prop.Key,
+                        Value = prop.Value,
+                        Level = 0
+                    });
+                }
+                else if (prop.Key.StartsWith("--") && prop.Value.Contains("var("))
+                {
+                    // 這是一個變數定義，檢查是否間接引用目標變數
+                    if (prop.Value.Contains($"var({variableName}"))
+                    {
+                        // 這個變數引用了目標變數，現在找出誰使用這個變數
+                        string intermediateVar = prop.Key;
+                        var intermediatePattern = new Regex($@"var\(\s*{Regex.Escape(intermediateVar)}(?:\s*,\s*([^)]+))?\s*\)", RegexOptions.Compiled);
+                        
+                        foreach (var otherClass in classes)
+                        {
+                            var otherProps = ContentToPropertiesPublic(otherClass.Content);
+                            foreach (var otherProp in otherProps)
+                            {
+                                if (intermediatePattern.IsMatch(otherProp.Value) && otherClass.ClassName != cssClass.ClassName)
+                                {
+                                    analysis.IndirectUsages.Add(new VariableUsage
+                                    {
+                                        ClassName = otherClass.ClassName,
+                                        Property = otherProp.Key,
+                                        Value = otherProp.Value,
+                                        Level = 1
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        analysis.TotalImpact = analysis.DirectUsages.Count + analysis.IndirectUsages.Count;
+        return analysis;
+    }
+
+    #endregion
 }

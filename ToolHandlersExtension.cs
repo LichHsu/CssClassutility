@@ -145,6 +145,41 @@ public partial class Program
                     },
                     required = new[] { "path" }
                 }
+            },
+            // 21. batch_replace_property_values
+            new
+            {
+                name = "batch_replace_property_values",
+                description = "在多個 class 中批次替換特定屬性值（支援精確匹配或正則表達式）",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
+                        oldValue = new { type = "string", description = "要替換的舊值（或正則表達式模式）" },
+                        newValue = new { type = "string", description = "新值" },
+                        propertyFilter = new { type = "string", description = "僅替換特定屬性的值（例如 'padding'，可選）" },
+                        useRegex = new { type = "boolean", description = "是否將 oldValue 視為正則表達式（預設 false）" }
+                    },
+                    required = new[] { "path", "oldValue", "newValue" }
+                }
+            },
+            // 22. analyze_variable_impact
+            new
+            {
+                name = "analyze_variable_impact",
+                description = "分析修改某個 CSS 變數會影響哪些 class（包括直接與間接引用）",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
+                        variableName = new { type = "string", description = "CSS 變數名稱（例如 '--primary-color'）" }
+                    },
+                    required = new[] { "path", "variableName" }
+                }
             }
         ];
     }
@@ -164,6 +199,8 @@ public partial class Program
             "identify_design_tokens" => HandleIdentifyDesignTokens(args),
             "trace_css_usage" => HandleTraceCssUsage(args),
             "suggest_css_refactoring" => HandleSuggestRefactoring(args),
+            "batch_replace_property_values" => HandleBatchReplacePropertyValues(args),
+            "analyze_variable_impact" => HandleAnalyzeVariableImpact(args),
             _ => null // 不是擴充工具
         };
     }
@@ -249,6 +286,27 @@ public partial class Program
         int minPriority = args.TryGetProperty("minPriority", out var p) ? p.GetInt32() : 1;
         
         var result = CssParser.SuggestRefactoring(path, minPriority);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+    }
+
+    private static string HandleBatchReplacePropertyValues(JsonElement args)
+    {
+        string path = args.GetProperty("path").GetString()!;
+        string oldValue = args.GetProperty("oldValue").GetString()!;
+        string newValue = args.GetProperty("newValue").GetString()!;
+        string? propertyFilter = args.TryGetProperty("propertyFilter", out var p) ? p.GetString() : null;
+        bool useRegex = args.TryGetProperty("useRegex", out var r) && r.GetBoolean();
+        
+        var result = CssParser.BatchReplacePropertyValues(path, oldValue, newValue, propertyFilter, useRegex);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+    }
+
+    private static string HandleAnalyzeVariableImpact(JsonElement args)
+    {
+        string path = args.GetProperty("path").GetString()!;
+        string variableName = args.GetProperty("variableName").GetString()!;
+        
+        var result = CssParser.AnalyzeVariableImpact(path, variableName);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 }
