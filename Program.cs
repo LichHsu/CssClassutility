@@ -240,7 +240,7 @@ public partial class Program
     /// <summary>
     /// 取得所有工具定義
     /// </summary>
-    private static object[] GetToolDefinitions()
+    public static object[] GetToolDefinitions()
     {
         return
         [
@@ -448,7 +448,7 @@ public partial class Program
     /// <summary>
     /// 處理工具呼叫
     /// </summary>
-    private static object HandleToolCall(JsonElement paramsEl)
+    public static object HandleToolCall(JsonElement paramsEl)
     {
         string name = paramsEl.GetProperty("name").GetString() ?? "";
         JsonElement args = paramsEl.GetProperty("arguments");
