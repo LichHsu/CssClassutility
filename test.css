@@ -1,0 +1,196 @@
+/* ========================================
+   CssClassutility 測試檔案
+   包含各種測試情境的 CSS Classes
+   ======================================== */
+
+/* === 基本 Class 定義 === */
+
+.test-single-prop {
+    color: red;
+}
+
+.test-multi-props {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    margin: 10px;
+}
+
+.test-with-important {
+    background-color: blue !important;
+    font-size: 16px;
+}
+
+/* === 重複 Class（用於測試索引功能） === */
+
+.duplicate-class {
+    color: red;
+    background: white;
+}
+
+.duplicate-class {
+    color: blue;
+    border: 1px solid black;
+}
+
+.duplicate-class {
+    color: green;
+    width: 100%;
+}
+
+/* === 群組選擇器 === */
+
+.btn-primary, .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.text-center, .text-right, .text-left {
+    display: block;
+}
+
+/* === 複雜選擇器 === */
+
+.container > .item {
+    margin: 5px;
+}
+
+.nav-item:hover {
+    background-color: #f0f0f0;
+}
+
+.card::before {
+    content: "";
+    display: block;
+}
+
+/* === 空 Class === */
+
+.empty-class {
+}
+
+/* === 包含註解的 Class === */
+
+.class-with-comments {
+    /* 這是主要顏色 */
+    color: #333;
+    /* 背景設定 */
+    background: white;
+    /* 
+       多行註解
+       用於說明
+    */
+    padding: 10px;
+}
+
+/* === Media Query 內的 Class === */
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: block;
+        width: 100%;
+    }
+
+    .responsive-text {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+}
+
+@media (min-width: 1200px) {
+    .desktop-only {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* === 特殊值測試 === */
+
+.special-values {
+    color: rgba(255, 0, 0, 0.5);
+    background: linear-gradient(to right, #ff0000, #00ff00);
+    transform: translateX(10px) rotate(45deg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.with-calc {
+    width: calc(100% - 20px);
+    height: calc(100vh - 60px);
+}
+
+.with-var {
+    color: var(--primary-color);
+    background: var(--bg-color, #ffffff);
+}
+
+/* === CSS 變數定義 === */
+
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --spacing-unit: 8px;
+}
+
+/* === 用於合併測試的 Classes === */
+
+.merge-target {
+    color: red;
+    padding: 10px;
+}
+
+.merge-source-overwrite {
+    color: blue;
+    padding: 20px;
+    margin: 15px;
+}
+
+.merge-source-fillmissing {
+    margin: 15px;
+    border: 1px solid black;
+}
+
+/* === 用於更新測試的 Class === */
+
+.update-test {
+    color: black;
+    background: white;
+    padding: 5px;
+}
+
+/* === 用於移除測試的 Class === */
+
+.remove-test {
+    display: block;
+}
+
+/* === 字符編碼測試 === */
+
+.unicode-test {
+    content: "測試中文字符";
+    font-family: "微軟正黑體", sans-serif;
+}
+
+/* === 動畫相關 === */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animated {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* === 結構完整性測試 === */
+
+.well-formed {
+    display: flex;
+}
+
+/* 此檔案應該有正確的大括號配對 */
