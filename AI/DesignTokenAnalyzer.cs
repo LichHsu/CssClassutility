@@ -162,7 +162,7 @@ public static class DesignTokenAnalyzer
         if (normalized.Contains("fff")) return "white";
         if (normalized.Contains("000")) return "black";
         // 使用 Hex 值作為名稱後綴，移除特定顏色判斷
-        return normalized.StartsWith("#") ? normalized.Substring(1) : normalized;
+        return normalized.StartsWith('#') ? normalized[1..] : normalized;
     }
 
     private static string GetSpacingName(string spacing)
