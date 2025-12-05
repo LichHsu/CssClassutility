@@ -158,8 +158,8 @@ public partial class Program
     /// </summary>
     public static object[] GetToolDefinitions()
     {
-        return
-        [
+        var baseTools = new object[]
+        {
             // 1. get_css_classes
             new
             {
@@ -356,7 +356,9 @@ public partial class Program
                     required = new[] { "targetPath", "sourcePath" }
                 }
             }
-        ];
+        };
+
+        return [..baseTools, ..GetExtendedToolDefinitions()];
     }
 
     public static object HandleToolCall(JsonElement paramsEl)
