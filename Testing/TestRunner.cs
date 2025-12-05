@@ -4,6 +4,8 @@ using System.Text.RegularExpressions;
 using CssClassutility.AI;
 using CssClassutility.Models;
 using CssClassutility.Core;
+using CssClassutility.Operations;
+using CssClassutility.Diagnostics;
 
 namespace CssClassutility.Testing;
 
@@ -477,6 +479,91 @@ public static class TestRunner
             Console.WriteLine($"✗ 測試 23 失敗: {ex.Message}");
             Log($"[錯誤] 測試 23: {ex}");
             failedTests++;
+        }
+
+        // === 測試 24: consolidate_css_files ===
+        totalTests++;
+        try
+        {
+            Log("[測試 24] consolidate_css_files");
+            string file1 = _testCssPath.Replace(".css", "_1.css");
+            string file2 = _testCssPath.Replace(".css", "_2.css");
+            string merged = _testCssPath.Replace(".css", "_merged.css");
+            
+            File.WriteAllText(file1, ".class1 { color: red; }");
+            File.WriteAllText(file2, ".class2 { color: blue; }");
+            
+            CssMerger.BatchMerge(new[] { file1, file2 }, merged, MergeStrategy.Overwrite);
+            
+            if (!File.Exists(merged)) throw new Exception("合併檔案未建立");
+            string mergedContent = File.ReadAllText(merged);
+            if (!mergedContent.Contains(".class1") || !mergedContent.Contains(".class2")) 
+                throw new Exception("合併內容不完整");
+            
+            Console.WriteLine($"✓ 測試 24: consolidate_css_files - 成功合併 2 個檔案");
+            
+            File.Delete(file1);
+            File.Delete(file2);
+            File.Delete(merged);
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine($"✗ 測試 24 失敗: {ex.Message}");
+             Log($"[錯誤] 測試 24: {ex}");
+             failedTests++;
+        }
+
+        // === 測試 25: analyze_css_usage ===
+        totalTests++;
+        try
+        {
+            Log("[測試 25] analyze_css_usage");
+            string tempRazor = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestUsage.razor");
+            string tempCss = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestUsage.css");
+            
+            File.WriteAllText(tempRazor, "<div class=\"used-class\"></div>");
+            File.WriteAllText(tempCss, ".used-class { color: red; } .unused-class { color: blue; }");
+            
+            var result = CssUsageAnalyzer.AnalyzeUsage(tempCss, AppDomain.CurrentDomain.BaseDirectory, new[] { ".razor" });
+            
+            // 驗證 .unused-class 被標記為 Unused
+            if (!result.UnusedClasses.Contains("unused-class")) 
+                 throw new Exception("未能偵測到未使用 Class");
+            
+            Console.WriteLine($"✓ 測試 25: analyze_css_usage - 成功偵測到 {result.UnusedClasses.Count} 個未使用 Class");
+            
+            File.Delete(tempRazor);
+            File.Delete(tempCss);
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine($"✗ 測試 25 失敗: {ex.Message}");
+             Log($"[錯誤] 測試 25: {ex}");
+             failedTests++;
+        }
+
+        // === 測試 26: list_css_sessions ===
+        totalTests++;
+        try
+        {
+            Log("[測試 26] list_css_sessions");
+            var session = CssSessionManager.CreateSession(_testCssPath);
+            var sessions = CssSessionManager.ListSessions();
+            
+            if (sessions.Count == 0) throw new Exception("未能列出 Session");
+            if (!sessions.Any(s => s.Id == session.Id)) throw new Exception("列表未包含剛建立的 Session");
+            
+            CssSessionManager.CloseSession(session.Id);
+            Console.WriteLine($"✓ 測試 26: list_css_sessions - 成功列出活躍 Sessions");
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine($"✗ 測試 26 失敗: {ex.Message}");
+             Log($"[錯誤] 測試 26: {ex}");
+             failedTests++;
         }
 
         // 輸出測試摘要

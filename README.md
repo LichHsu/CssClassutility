@@ -4,7 +4,7 @@
 
 ## 🌟 專案簡介
 
-**CssClassutility** 是一個以 C# 開發的 MCP 伺服器，提供 **28 個專業工具**來協助 AI 代理進行 CSS 檔案的解析、操作、診斷與重構。特別適合用於：
+**CssClassutility** 是一個以 C# 開發的 MCP 伺服器，提供 **30 個專業工具**來協助 AI 代理進行 CSS 檔案的解析、操作、診斷與重構。特別適合用於：
 
 - 🔧 CSS 程式碼重構與優化
 - 🎨 建立與管理設計系統
@@ -33,6 +33,7 @@
 | `get_css_entity`             | 讀取並解析 CSS 實體 JSON 檔案                            |
 | `update_css_entity_property` | 修改 CSS 實體 JSON 檔案的屬性                            |
 | `merge_css_entity`           | 合併兩個 CSS 實體 JSON 檔案                              |
+| `consolidate_css_files`      | 批次合併多個 CSS 檔案到目標檔案                          |
 
 ### 🔍 進階診斷工具（工具 13-17）
 
@@ -53,6 +54,7 @@
 | `suggest_css_refactoring`       | 分析 CSS 並提供智能重構建議（提取共用屬性、合併相似 class 等） |
 | `batch_replace_property_values` | 在多個 class 中批次替換特定屬性值（支援正則表達式）            |
 | `analyze_variable_impact`       | 分析修改某個 CSS 變數會影響哪些 class（包括直接與間接引用）    |
+| `analyze_css_usage`             | 全域分析 CSS 使用狀況（找出 Unused 與 Undefined Class）        |
 
 ### 📝 CSS 工作階段管理工具（工具 23-28）⭐ 新增
 
@@ -358,6 +360,14 @@ dotnet run -- --test
 - 🚀 支援記憶體內編輯，大幅提升批次操作效能
 - 🔄 核心解析邏輯重構，支援純字串內容處理
 - 📊 總工具數量達到 29 個
+
+### v2.3.0（2025-12-05）
+- ✨ 新增 `analyze_css_usage` 工具：
+  - 全域分析專案中的 CSS 使用狀況
+  - 偵測定義但未使用的 Class (Unused)
+  - 偵測使用但未定義的 Class (Undefined)
+  - 支援排除特定目錄與自訂掃描副檔名
+- 📊 總工具數量達到 30 個
 
 ### v1.0.0
 - 🎉 初始版本發布

@@ -1,8 +1,9 @@
-using System.Text.Json;
 using CssClassutility.AI;
-using CssClassutility.Models;
 using CssClassutility.Core;
+using CssClassutility.Diagnostics;
+using CssClassutility.Models;
 using CssClassutility.Operations;
+using System.Text.Json;
 
 namespace CssClassutility;
 
@@ -289,6 +290,24 @@ public partial class Program
                     },
                     required = new[] { "targetPath" }
                 }
+            },
+            // 30. analyze_css_usage
+            new
+            {
+                name = "analyze_css_usage",
+                description = "全域分析 CSS 使用狀況：比對 CSS 檔案定義與專案中的實際使用，找出 Unused 與 Undefined Class。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        cssPath = new { type = "string", description = "來源 CSS 檔案路徑" },
+                        projectRoot = new { type = "string", description = "要掃描的專案根目錄" },
+                        fileExtensions = new { type = "array", items = new { type = "string" }, description = "要掃描的副檔名 (預設 .razor, .html)" },
+                        ignorePaths = new { type = "array", items = new { type = "string" }, description = "要忽略的目錄名稱 (預設 bin, obj, node_modules)" }
+                    },
+                    required = new[] { "cssPath", "projectRoot" }
+                }
             }
         ];
     }
@@ -317,6 +336,7 @@ public partial class Program
             "close_css_session" => HandleCloseCssSession(args),
             "list_css_sessions" => HandleListCssSessions(args),
             "consolidate_css_files" => HandleConsolidateCssFiles(args),
+            "analyze_css_usage" => HandleAnalyzeCssUsage(args),
             _ => null // 不是擴充工具
         };
     }
@@ -361,8 +381,8 @@ public partial class Program
 
         var strategy = Enum.Parse<MergeStrategy>(strategyStr, true);
         return CssParser.MergeCssClassFromFile(
-            targetPath, targetClassName, 
-            sourcePath, sourceClassName, 
+            targetPath, targetClassName,
+            sourcePath, sourceClassName,
             strategy, targetIndex, sourceIndex);
     }
 
@@ -370,7 +390,7 @@ public partial class Program
     {
         string path = args.GetProperty("path").GetString()!;
         int minOccurrences = args.TryGetProperty("minOccurrences", out var m) ? m.GetInt32() : 2;
-        
+
         var result = DesignTokenAnalyzer.IdentifyDesignTokens(path, minOccurrences);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
@@ -380,7 +400,7 @@ public partial class Program
         string className = args.GetProperty("className").GetString()!;
         string projectRoot = args.GetProperty("projectRoot").GetString()!;
         string[]? extensions = null;
-        
+
         if (args.TryGetProperty("fileExtensions", out var ext))
         {
             var list = new List<string>();
@@ -391,7 +411,7 @@ public partial class Program
             }
             extensions = list.ToArray();
         }
-        
+
         var result = UsageTracer.TraceCssUsage(className, projectRoot, extensions);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
@@ -400,7 +420,7 @@ public partial class Program
     {
         string path = args.GetProperty("path").GetString()!;
         int minPriority = args.TryGetProperty("minPriority", out var p) ? p.GetInt32() : 1;
-        
+
         var result = RefactoringAdvisor.SuggestRefactoring(path, minPriority);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
@@ -412,7 +432,7 @@ public partial class Program
         string newValue = args.GetProperty("newValue").GetString()!;
         string? propertyFilter = args.TryGetProperty("propertyFilter", out var p) ? p.GetString() : null;
         bool useRegex = args.TryGetProperty("useRegex", out var r) && r.GetBoolean();
-        
+
         var result = BatchReplacer.BatchReplacePropertyValues(path, oldValue, newValue, propertyFilter, useRegex);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
@@ -421,7 +441,7 @@ public partial class Program
     {
         string path = args.GetProperty("path").GetString()!;
         string variableName = args.GetProperty("variableName").GetString()!;
-        
+
         var result = VariableAnalyzer.AnalyzeVariableImpact(path, variableName);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
@@ -502,5 +522,30 @@ public partial class Program
         }
 
         return CssMerger.BatchMerge(sourcePaths.Distinct(), targetPath, strategy);
+    }
+
+    private static string HandleAnalyzeCssUsage(JsonElement args)
+    {
+        string cssPath = args.GetProperty("cssPath").GetString()!;
+        string projectRoot = args.GetProperty("projectRoot").GetString()!;
+        string[]? fileExtensions = null;
+        string[]? ignorePaths = null;
+
+        if (args.TryGetProperty("fileExtensions", out var fExt))
+        {
+            var list = new List<string>();
+            foreach (var item in fExt.EnumerateArray()) list.Add(item.GetString()!);
+            fileExtensions = list.ToArray();
+        }
+
+        if (args.TryGetProperty("ignorePaths", out var iPaths))
+        {
+            var list = new List<string>();
+            foreach (var item in iPaths.EnumerateArray()) list.Add(item.GetString()!);
+            ignorePaths = list.ToArray();
+        }
+
+        var result = CssUsageAnalyzer.AnalyzeUsage(cssPath, projectRoot, fileExtensions, ignorePaths);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 }
