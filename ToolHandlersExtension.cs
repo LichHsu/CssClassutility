@@ -1,4 +1,7 @@
 using System.Text.Json;
+using CssClassutility.AI;
+using CssClassutility.Models;
+using CssClassutility.Core;
 
 namespace CssClassutility;
 
@@ -180,6 +183,93 @@ public partial class Program
                     },
                     required = new[] { "path", "variableName" }
                 }
+            },
+            // 23. start_css_session
+            new
+            {
+                name = "start_css_session",
+                description = "開啟一個新的 CSS 編輯工作階段 (可選載入檔案)。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        filePath = new { type = "string", description = "要載入的 CSS 檔案路徑 (可選)" }
+                    }
+                }
+            },
+            // 24. get_css_session
+            new
+            {
+                name = "get_css_session",
+                description = "取得指定工作階段的詳細資訊。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        sessionId = new { type = "string", description = "工作階段 ID" }
+                    },
+                    required = new[] { "sessionId" }
+                }
+            },
+            // 25. update_css_session_content
+            new
+            {
+                name = "update_css_session_content",
+                description = "更新工作階段的 CSS 內容。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        sessionId = new { type = "string", description = "工作階段 ID" },
+                        newContent = new { type = "string", description = "新的 CSS 內容" }
+                    },
+                    required = new[] { "sessionId", "newContent" }
+                }
+            },
+            // 26. save_css_session
+            new
+            {
+                name = "save_css_session",
+                description = "將工作階段的內容儲存至檔案。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        sessionId = new { type = "string", description = "工作階段 ID" },
+                        targetPath = new { type = "string", description = "儲存目標路徑 (若未指定則使用原始路徑)" }
+                    },
+                    required = new[] { "sessionId" }
+                }
+            },
+            // 27. close_css_session
+            new
+            {
+                name = "close_css_session",
+                description = "關閉工作階段。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        sessionId = new { type = "string", description = "工作階段 ID" }
+                    },
+                    required = new[] { "sessionId" }
+                }
+            },
+            // 28. list_css_sessions
+            new
+            {
+                name = "list_css_sessions",
+                description = "列出所有活躍的工作階段。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new { }
+                }
             }
         ];
     }
@@ -201,6 +291,12 @@ public partial class Program
             "suggest_css_refactoring" => HandleSuggestRefactoring(args),
             "batch_replace_property_values" => HandleBatchReplacePropertyValues(args),
             "analyze_variable_impact" => HandleAnalyzeVariableImpact(args),
+            "start_css_session" => HandleStartCssSession(args),
+            "get_css_session" => HandleGetCssSession(args),
+            "update_css_session_content" => HandleUpdateCssSessionContent(args),
+            "save_css_session" => HandleSaveCssSession(args),
+            "close_css_session" => HandleCloseCssSession(args),
+            "list_css_sessions" => HandleListCssSessions(args),
             _ => null // 不是擴充工具
         };
     }
@@ -255,7 +351,7 @@ public partial class Program
         string path = args.GetProperty("path").GetString()!;
         int minOccurrences = args.TryGetProperty("minOccurrences", out var m) ? m.GetInt32() : 2;
         
-        var result = CssParser.IdentifyDesignTokens(path, minOccurrences);
+        var result = DesignTokenAnalyzer.IdentifyDesignTokens(path, minOccurrences);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
@@ -276,7 +372,7 @@ public partial class Program
             extensions = list.ToArray();
         }
         
-        var result = CssParser.TraceCssUsage(className, projectRoot, extensions);
+        var result = UsageTracer.TraceCssUsage(className, projectRoot, extensions);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
@@ -285,7 +381,7 @@ public partial class Program
         string path = args.GetProperty("path").GetString()!;
         int minPriority = args.TryGetProperty("minPriority", out var p) ? p.GetInt32() : 1;
         
-        var result = CssParser.SuggestRefactoring(path, minPriority);
+        var result = RefactoringAdvisor.SuggestRefactoring(path, minPriority);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
@@ -297,7 +393,7 @@ public partial class Program
         string? propertyFilter = args.TryGetProperty("propertyFilter", out var p) ? p.GetString() : null;
         bool useRegex = args.TryGetProperty("useRegex", out var r) && r.GetBoolean();
         
-        var result = CssParser.BatchReplacePropertyValues(path, oldValue, newValue, propertyFilter, useRegex);
+        var result = BatchReplacer.BatchReplacePropertyValues(path, oldValue, newValue, propertyFilter, useRegex);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
@@ -306,7 +402,51 @@ public partial class Program
         string path = args.GetProperty("path").GetString()!;
         string variableName = args.GetProperty("variableName").GetString()!;
         
-        var result = CssParser.AnalyzeVariableImpact(path, variableName);
+        var result = VariableAnalyzer.AnalyzeVariableImpact(path, variableName);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+    }
+
+    private static string HandleStartCssSession(JsonElement args)
+    {
+        string? filePath = args.TryGetProperty("filePath", out var f) ? f.GetString() : null;
+        var session = CssSessionManager.CreateSession(filePath);
+        return JsonSerializer.Serialize(session, _jsonPrettyOptions);
+    }
+
+    private static string HandleGetCssSession(JsonElement args)
+    {
+        string sessionId = args.GetProperty("sessionId").GetString()!;
+        var session = CssSessionManager.GetSession(sessionId);
+        return JsonSerializer.Serialize(session, _jsonPrettyOptions);
+    }
+
+    private static string HandleUpdateCssSessionContent(JsonElement args)
+    {
+        string sessionId = args.GetProperty("sessionId").GetString()!;
+        string newContent = args.GetProperty("newContent").GetString()!;
+        CssSessionManager.UpdateSessionContent(sessionId, newContent);
+        var session = CssSessionManager.GetSession(sessionId);
+        return JsonSerializer.Serialize(session, _jsonPrettyOptions);
+    }
+
+    private static string HandleSaveCssSession(JsonElement args)
+    {
+        string sessionId = args.GetProperty("sessionId").GetString()!;
+        string? targetPath = args.TryGetProperty("targetPath", out var t) ? t.GetString() : null;
+        CssSessionManager.SaveSession(sessionId, targetPath);
+        return $"工作階段 {sessionId} 已儲存至 {(targetPath ?? "原始路徑")}";
+    }
+
+    private static string HandleCloseCssSession(JsonElement args)
+    {
+        string sessionId = args.GetProperty("sessionId").GetString()!;
+        CssSessionManager.CloseSession(sessionId);
+        return $"工作階段 {sessionId} 已關閉";
+    }
+
+    private static string HandleListCssSessions(JsonElement args)
+    {
+        var sessions = CssSessionManager.ListSessions();
+        return JsonSerializer.Serialize(sessions, _jsonPrettyOptions);
     }
 }

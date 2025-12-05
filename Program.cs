@@ -165,7 +165,6 @@ public partial class Program
 
                 if (string.IsNullOrWhiteSpace(line))
                 {
-                    // 有時候會有空的 newline，忽略但不記錄以免洗版，或者也可以記錄下來觀察
                     continue;
                 }
 
@@ -230,7 +229,6 @@ public partial class Program
         }
         catch (Exception ex)
         {
-            // 捕捉最外層的錯誤 (例如 JSON 解析嚴重失敗)
             Log($"[FATAL ERROR]: {ex}");
         }
     }
@@ -635,8 +633,15 @@ public partial class CssParser
     public static List<CssClass> GetClasses(string path)
     {
         if (!File.Exists(path)) throw new FileNotFoundException("找不到檔案", path);
-
         string content = File.ReadAllText(path);
+        return GetClassesFromContent(content, path);
+    }
+
+    /// <summary>
+    /// 從內容解析 CSS Class
+    /// </summary>
+    public static List<CssClass> GetClassesFromContent(string content, string filePath = "")
+    {
         var results = new List<CssClass>();
         var length = content.Length;
 
@@ -742,7 +747,7 @@ public partial class CssParser
                                 Selector = scope.Selector,
                                 Content = innerContent,
                                 Context = context,
-                                File = path,
+                                File = filePath,
                                 StartIndex = scope.SelectorStart,
                                 BlockEnd = blockEnd
                             });
@@ -802,23 +807,16 @@ public partial class CssParser
             .Select(p =>
             {
                 var parts = p.Split(':', 2);
-                if (parts.Length == 2)
-                {
-                    string key = parts[0].Trim().ToLower();
-                    string val = parts[1].Trim();
-                    return $"{key}: {val}";
-                }
-                return p;
+                return parts.Length == 2
+                    ? new { Key = parts[0].Trim().ToLower(), Value = parts[1].Trim() }
+                    : null;
             })
-            .OrderBy(p => p);
+            .Where(p => p != null)
+            .OrderBy(p => p!.Key)
+            .Select(p => $"{p!.Key}:{p.Value}");
 
         return string.Join(";", props);
     }
-
-    #endregion
-
-    #region Class 移除
-
     /// <summary>
     /// 安全地從檔案中移除 CSS Class 定義
     /// </summary>
@@ -903,7 +901,7 @@ public partial class CssParser
 
     public static CssEntity ConvertToCssJson(CssClass cssClass, string? sourceFileName = null)
     {
-        var props = ContentToProperties(cssClass.Content);
+        var props = ContentToPropertiesPublic(cssClass.Content);
         var sortedProps = new SortedDictionary<string, string>(props, StringComparer.OrdinalIgnoreCase);
 
         return new CssEntity
@@ -1188,22 +1186,6 @@ public partial class CssParser
 
     #region 輔助方法
 
-    private static Dictionary<string, string> ContentToProperties(string content)
-    {
-        var dict = new Dictionary<string, string>();
-        var props = content.Split(';');
-        foreach (var p in props)
-        {
-            if (string.IsNullOrWhiteSpace(p)) continue;
-            var parts = p.Split(':', 2);
-            if (parts.Length == 2)
-            {
-                dict[parts[0].Trim()] = parts[1].Trim();
-            }
-        }
-        return dict;
-    }
-
     private static bool MergeProperties(SortedDictionary<string, string> target, SortedDictionary<string, string> source, MergeStrategy strategy)
     {
         bool modified = false;
@@ -1245,9 +1227,18 @@ public partial class CssParser
     private static void ReplaceBlock(string path, int start, int end, string newContent)
     {
         string content = File.ReadAllText(path);
+        string newFullContent = ReplaceBlockInContent(content, start, end, newContent);
+        File.WriteAllText(path, newFullContent, Encoding.UTF8);
+    }
+
+    /// <summary>
+    /// 在內容中替換區塊
+    /// </summary>
+    public static string ReplaceBlockInContent(string content, int start, int end, string newBlock)
+    {
         string before = content.Substring(0, start);
         string after = content.Substring(end + 1);
-        File.WriteAllText(path, before + newContent + after, Encoding.UTF8);
+        return before + newBlock + after;
     }
 
     public static string UpdateClassProperty(string path, string className, string key, string value, string action)

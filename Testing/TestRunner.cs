@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using CssClassutility.AI;
+using CssClassutility.Models;
+using CssClassutility.Core;
 
 namespace CssClassutility.Testing;
 
@@ -329,7 +332,7 @@ public static class TestRunner
         try
         {
             Log("[測試 17] identify_design_tokens");
-            var result = CssParser.IdentifyDesignTokens(_testCssPath, 1);
+            var result = DesignTokenAnalyzer.IdentifyDesignTokens(_testCssPath, 1);
             Console.WriteLine($"✓ 測試 17: identify_design_tokens - 找到 {result.Colors.Count} 個顏色 tokens");
             passedTests++;
         }
@@ -349,7 +352,7 @@ public static class TestRunner
             string tempRazor = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test.razor");
             File.WriteAllText(tempRazor, "<div class=\"test-single-prop\"></div>");
             
-            var result = CssParser.TraceCssUsage("test-single-prop", AppDomain.CurrentDomain.BaseDirectory, new[] { ".razor" });
+            var result = UsageTracer.TraceCssUsage("test-single-prop", AppDomain.CurrentDomain.BaseDirectory, new[] { ".razor" });
             Console.WriteLine($"✓ 測試 18: trace_css_usage - 找到 {result.TotalOccurrences} 次使用");
             
             File.Delete(tempRazor);
@@ -367,7 +370,7 @@ public static class TestRunner
         try
         {
             Log("[測試 19] suggest_css_refactoring");
-            var result = CssParser.SuggestRefactoring(_testCssPath, 1);
+            var result = RefactoringAdvisor.SuggestRefactoring(_testCssPath, 1);
             Console.WriteLine($"✓ 測試 19: suggest_css_refactoring - 提出 {result.Suggestions.Count} 個建議");
             passedTests++;
         }
@@ -386,7 +389,7 @@ public static class TestRunner
             string testCopy = _testCssPath.Replace(".css", "_batch.css");
             File.Copy(_testCssPath, testCopy, true);
             
-            var result = CssParser.BatchReplacePropertyValues(testCopy, "red", "blue", "color", false);
+            var result = BatchReplacer.BatchReplacePropertyValues(testCopy, "red", "blue", "color", false);
             Console.WriteLine($"✓ 測試 20: batch_replace_property_values - 替換了 {result.AffectedClasses.Count} 個 classes");
             
             File.Delete(testCopy);
@@ -405,7 +408,7 @@ public static class TestRunner
         {
             Log("[測試 21] analyze_variable_impact");
             // 假設測試檔案中有變數，若無則此測試可能回傳 0 影響，但也算通過執行
-            var result = CssParser.AnalyzeVariableImpact(_testCssPath, "--test-var");
+            var result = VariableAnalyzer.AnalyzeVariableImpact(_testCssPath, "--test-var");
             Console.WriteLine($"✓ 測試 21: analyze_variable_impact - 分析完成，影響 {result.TotalImpact} 個 classes");
             passedTests++;
         }
@@ -439,6 +442,40 @@ public static class TestRunner
         {
             Console.WriteLine($"✗ 測試 22 失敗: {ex.Message}");
             Log($"[錯誤] 測試 22: {ex}");
+            failedTests++;
+        }
+
+        // === 測試 23: CssSessionManager ===
+        totalTests++;
+        try
+        {
+            Log("[測試 23] CssSessionManager");
+            var session = CssSessionManager.CreateSession(_testCssPath);
+            if (session.Content.Length == 0) throw new Exception("Session 內容為空");
+            
+            string newContent = session.Content + "\n.new-session-class { color: pink; }";
+            CssSessionManager.UpdateSessionContent(session.Id, newContent);
+            
+            var updatedSession = CssSessionManager.GetSession(session.Id);
+            if (updatedSession.Content != newContent) throw new Exception("Session 內容更新失敗");
+            if (!updatedSession.IsDirty) throw new Exception("Session IsDirty 狀態錯誤");
+            
+            string tempSavePath = _testCssPath.Replace(".css", "_session_save.css");
+            CssSessionManager.SaveSession(session.Id, tempSavePath);
+            
+            if (!File.Exists(tempSavePath)) throw new Exception("Session 儲存失敗");
+            
+            CssSessionManager.CloseSession(session.Id);
+            if (CssSessionManager.GetSession(session.Id) != null) throw new Exception("Session 關閉失敗");
+            
+            Console.WriteLine($"✓ 測試 23: CssSessionManager - 成功建立、更新、儲存與關閉 Session");
+            File.Delete(tempSavePath);
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 23 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 23: {ex}");
             failedTests++;
         }
 
