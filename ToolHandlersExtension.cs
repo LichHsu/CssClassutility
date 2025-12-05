@@ -2,6 +2,7 @@ using System.Text.Json;
 using CssClassutility.AI;
 using CssClassutility.Models;
 using CssClassutility.Core;
+using CssClassutility.Operations;
 
 namespace CssClassutility;
 
@@ -270,6 +271,24 @@ public partial class Program
                     type = "object",
                     properties = new { }
                 }
+            },
+            // 29. consolidate_css_files
+            new
+            {
+                name = "consolidate_css_files",
+                description = "批次合併多個 CSS 檔案到目標檔案。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        sourcePaths = new { type = "array", items = new { type = "string" }, description = "來源 CSS 檔案路徑列表 (可選)" },
+                        sourceDirectory = new { type = "string", description = "來源目錄路徑 (可選)" },
+                        targetPath = new { type = "string", description = "目標 CSS 檔案路徑" },
+                        strategy = new { type = "string", @enum = new[] { "Overwrite", "FillMissing" }, description = "合併策略" }
+                    },
+                    required = new[] { "targetPath" }
+                }
             }
         ];
     }
@@ -297,6 +316,7 @@ public partial class Program
             "save_css_session" => HandleSaveCssSession(args),
             "close_css_session" => HandleCloseCssSession(args),
             "list_css_sessions" => HandleListCssSessions(args),
+            "consolidate_css_files" => HandleConsolidateCssFiles(args),
             _ => null // 不是擴充工具
         };
     }
@@ -448,5 +468,39 @@ public partial class Program
     {
         var sessions = CssSessionManager.ListSessions();
         return JsonSerializer.Serialize(sessions, _jsonPrettyOptions);
+    }
+
+    private static string HandleConsolidateCssFiles(JsonElement args)
+    {
+        string targetPath = args.GetProperty("targetPath").GetString()!;
+        string strategyStr = args.TryGetProperty("strategy", out var s) ? s.GetString() ?? "Overwrite" : "Overwrite";
+        var strategy = Enum.Parse<MergeStrategy>(strategyStr, true);
+
+        var sourcePaths = new List<string>();
+
+        if (args.TryGetProperty("sourcePaths", out var paths))
+        {
+            foreach (var item in paths.EnumerateArray())
+            {
+                var val = item.GetString();
+                if (val != null) sourcePaths.Add(val);
+            }
+        }
+
+        if (args.TryGetProperty("sourceDirectory", out var dir))
+        {
+            string? dirPath = dir.GetString();
+            if (!string.IsNullOrEmpty(dirPath) && Directory.Exists(dirPath))
+            {
+                sourcePaths.AddRange(Directory.GetFiles(dirPath, "*.css"));
+            }
+        }
+
+        if (sourcePaths.Count == 0)
+        {
+            throw new ArgumentException("必須提供 sourcePaths 或 sourceDirectory");
+        }
+
+        return CssMerger.BatchMerge(sourcePaths.Distinct(), targetPath, strategy);
     }
 }
