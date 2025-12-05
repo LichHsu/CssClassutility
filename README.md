@@ -29,6 +29,7 @@
 | `merge_css_class`            | 合併 CSS Class 屬性（支援多種策略：覆寫/補齊/移除重複）  |
 | `export_css_to_entities`     | 將 CSS 檔案實體化為 JSON 檔案集合                        |
 | `import_css_from_entities`   | 從 JSON 實體集合重建 CSS 檔案                            |
+| `consolidate_css_files`      | 批次合併目錄中的 CSS 檔案至單一檔案                      |
 | `get_css_entity`             | 讀取並解析 CSS 實體 JSON 檔案                            |
 | `update_css_entity_property` | 修改 CSS 實體 JSON 檔案的屬性                            |
 | `merge_css_entity`           | 合併兩個 CSS 實體 JSON 檔案                              |
@@ -63,6 +64,21 @@
 | `save_css_session`           | 將工作階段的內容儲存至檔案                   |
 | `close_css_session`          | 關閉工作階段                                 |
 | `list_css_sessions`          | 列出所有活躍的工作階段                       |
+
+### 💻 CLI 命令列模式（CLI Mode）⭐ 新增
+
+除了 MCP 伺服器模式，本工具也支援直接透過命令列執行常用任務：
+
+#### 1. 識別設計 Token
+```bash
+dotnet run -- identify-tokens --path "path/to/style.css" [minOccurrences]
+```
+
+#### 2. 批次取代
+```bash
+dotnet run -- replace-batch --path "path/to/style.css" --old "#ff0000" --new "var(--red-500)"
+```
+
 
 ---
 
@@ -329,13 +345,19 @@ dotnet run -- --test
 - 📊 總工具數量達到 22 個
 - 🔧 改進錯誤處理與日誌記錄
 
+### v2.2.0（2025-12-05）
+- ✨ 新增 CLI 命令列支援
+  - `identify-tokens` - 設計 Token 識別
+  - `replace-batch` - 批次取代
+- ✨ 新增 `consolidate_css_files` 工具，支援批次合併與壓縮 CSS
+
 ### v2.1.0（2025-12-05）
 - ✨ 新增 6 個 CSS 工作階段管理工具
   - `start_css_session`, `get_css_session`, `update_css_session_content`
   - `save_css_session`, `close_css_session`, `list_css_sessions`
 - 🚀 支援記憶體內編輯，大幅提升批次操作效能
 - 🔄 核心解析邏輯重構，支援純字串內容處理
-- 📊 總工具數量達到 28 個
+- 📊 總工具數量達到 29 個
 
 ### v1.0.0
 - 🎉 初始版本發布
