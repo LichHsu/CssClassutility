@@ -6,6 +6,7 @@ using CssClassutility.Operations;
 using CssClassutility.Models;
 using CssClassutility.MCP;
 using CssClassutility.Core;
+using CssClassutility.AI;
 
 namespace CssClassutility;
 
@@ -35,10 +36,34 @@ public partial class Program
         Console.InputEncoding = new UTF8Encoding(false);
 
         // 檢查是否為測試模式
-        if (args.Length > 0 && args[0] == "--test")
+        if (args.Length > 0)
         {
-            TestRunner.RunAllTests();
-            return;
+            if (args[0] == "--test")
+            {
+                TestRunner.RunAllTests();
+                return;
+            }
+
+            if (args[0] == "identify-tokens")
+            {
+                // Usage: identify-tokens <path> [minOccurrences]
+                string path = args[1];
+                int minOccurrences = args.Length > 2 ? int.Parse(args[2]) : 2;
+                var result = DesignTokenAnalyzer.IdentifyDesignTokens(path, minOccurrences);
+                Console.WriteLine(JsonSerializer.Serialize(result, _jsonPrettyOptions));
+                return;
+            }
+
+            if (args[0] == "replace-batch")
+            {
+                // Usage: replace-batch <path> <oldValue> <newValue>
+                string path = args[1];
+                string oldValue = args[2];
+                string newValue = args[3];
+                var result = BatchReplacer.BatchReplacePropertyValues(path, oldValue, newValue);
+                Console.WriteLine(JsonSerializer.Serialize(result, _jsonPrettyOptions));
+                return;
+            }
         }
 
         // 2. 啟動記錄
@@ -330,15 +355,10 @@ public partial class Program
                     },
                     required = new[] { "targetPath", "sourcePath" }
                 }
-            },
-            // === 擴充工具 ===
-            ..GetExtendedToolDefinitions()
+            }
         ];
     }
 
-    /// <summary>
-    /// 處理工具呼叫
-    /// </summary>
     public static object HandleToolCall(JsonElement paramsEl)
     {
         string name = paramsEl.GetProperty("name").GetString() ?? "";
