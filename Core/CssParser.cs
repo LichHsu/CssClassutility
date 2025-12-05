@@ -269,63 +269,49 @@ public partial class CssParser
     {
         if (!File.Exists(path)) return $"錯誤：找不到檔案 {path}";
 
-        // 建立備份
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string backupPath = $"{path}.safe_backup_{timestamp}";
-        File.Copy(path, backupPath, true);
+        string content = File.ReadAllText(path);
+        var classes = GetClasses(path);
 
-        try
+        var target = classes.FirstOrDefault(c => c.ClassName.Equals(className, StringComparison.OrdinalIgnoreCase));
+        if (target == null)
         {
-            string content = File.ReadAllText(path);
-            var classes = GetClasses(path);
-
-            var target = classes.FirstOrDefault(c => c.ClassName.Equals(className, StringComparison.OrdinalIgnoreCase));
-            if (target == null)
-            {
-                return $"警告：在 {path} 中找不到 Class .{className}";
-            }
-
-            // 安全檢查：群組選擇器
-            if (target.Selector.Contains(','))
-            {
-                return $"安全防護：Class .{className} 屬於群組選擇器 '{target.Selector}'。目前不支援部分移除群組選擇器，請手動處理。";
-            }
-
-            // 移除內容
-            int removeStartIndex = target.StartIndex;
-            int removeEndIndex = target.BlockEnd;
-
-            // 檢查前導換行/空白以移除空行 (Lookbehind)
-            while (removeStartIndex > 0 && char.IsWhiteSpace(content[removeStartIndex - 1]))
-            {
-                removeStartIndex--;
-            }
-
-            string newContent = content.Remove(removeStartIndex, removeEndIndex - removeStartIndex + 1);
-
-            // 插入註解標記
-            string comment = $"\n/* .{className} removed by CssClassManager */\n";
-            newContent = newContent.Insert(removeStartIndex, comment);
-
-            // 驗證完整性 (檢查大括號平衡)
-            int openCount = newContent.Count(c => c == '{');
-            int closeCount = newContent.Count(c => c == '}');
-
-            if (openCount != closeCount)
-            {
-                throw new Exception($"移除後偵測到大括號不匹配！ (Open: {openCount}, Close: {closeCount})");
-            }
-
-            // 儲存檔案
-            File.WriteAllText(path, newContent, Encoding.UTF8);
-            return $"成功從 {path} 移除 .{className}（備份已建立於 {backupPath}）";
+            return $"警告：在 {path} 中找不到 Class .{className}";
         }
-        catch (Exception ex)
+
+        // 安全檢查：群組選擇器
+        if (target.Selector.Contains(','))
         {
-            // 還原備份
-            File.Copy(backupPath, path, true);
-            return $"移除失敗：{ex.Message}（已從備份還原）";
+            return $"安全防護：Class .{className} 屬於群組選擇器 '{target.Selector}'。目前不支援部分移除群組選擇器，請手動處理。";
         }
+
+        // 移除內容
+        int removeStartIndex = target.StartIndex;
+        int removeEndIndex = target.BlockEnd;
+
+        // 檢查前導換行/空白以移除空行 (Lookbehind)
+        while (removeStartIndex > 0 && char.IsWhiteSpace(content[removeStartIndex - 1]))
+        {
+            removeStartIndex--;
+        }
+
+        string newContent = content.Remove(removeStartIndex, removeEndIndex - removeStartIndex + 1);
+
+        // 插入註解標記
+        string comment = $"\n/* .{className} removed by CssClassManager */\n";
+        newContent = newContent.Insert(removeStartIndex, comment);
+
+        // 驗證完整性 (檢查大括號平衡)
+        int openCount = newContent.Count(c => c == '{');
+        int closeCount = newContent.Count(c => c == '}');
+
+        if (openCount != closeCount)
+        {
+            throw new Exception($"移除後偵測到大括號不匹配！ (Open: {openCount}, Close: {closeCount})");
+        }
+
+        // 儲存檔案
+        File.WriteAllText(path, newContent, Encoding.UTF8);
+        return $"成功從 {path} 移除 .{className}";
     }
 
     #endregion

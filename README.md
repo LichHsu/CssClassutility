@@ -23,7 +23,7 @@
 | `get_css_classes`            | 解析 CSS 檔案並回傳所有 Class 定義列表（含精確位置資訊） |
 | `update_css_class`           | 直接修改 CSS 檔案中指定 Class 的屬性（新增、更新或刪除） |
 | `compare_css_style`          | 語義化比較兩個 CSS 樣式區塊是否相同（忽略空白與順序）    |
-| `remove_css_class`           | 安全地移除 CSS Class（自動建立備份並驗證語法）           |
+| `remove_css_class`           | 從檔案中移除 CSS Class 定義（驗證語法）                  |
 | `convert_to_css_json`        | 將 CSS Class 轉換為 JSON 實體格式（屬性自動排序）        |
 | `convert_from_css_json`      | 將 JSON 實體轉換回 CSS 字串                              |
 | `merge_css_class`            | 合併 CSS Class 屬性（支援多種策略：覆寫/補齊/移除重複）  |

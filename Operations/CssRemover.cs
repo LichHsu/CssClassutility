@@ -26,22 +26,9 @@ public static class CssRemover
 
         var target = classes[index];
 
-        // 建立備份
-        string backupPath = $"{path}.backup_{DateTime.Now:yyyyMMdd_HHmmss}";
-        File.Copy(path, backupPath, true);
-
-        try
-        {
-            // 移除 Class 區塊
-            string newContent = content.Remove(target.StartIndex, target.BlockEnd - target.StartIndex + 1);
-            File.WriteAllText(path, newContent);
-            return $"已移除 Class .{className} (索引 {index})，備份於 {backupPath}";
-        }
-        catch (Exception ex)
-        {
-            // 發生錯誤，恢復備份
-            File.Copy(backupPath, path, true);
-            throw new Exception($"移除失敗：{ex.Message}（已從備份還原）", ex);
-        }
+        // 移除 Class 區塊
+        string newContent = content.Remove(target.StartIndex, target.BlockEnd - target.StartIndex + 1);
+        File.WriteAllText(path, newContent);
+        return $"已移除 Class .{className} (索引 {index})";
     }
 }

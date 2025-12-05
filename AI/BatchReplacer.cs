@@ -24,121 +24,98 @@ public static class BatchReplacer
 
         var result = new BatchReplaceResult();
         
-        // 1. 建立備份
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string backupPath = $"{cssPath}.batch_backup_{timestamp}";
-        File.Copy(cssPath, backupPath, true);
-        result.BackupPath = backupPath;
+        // 2. 讀取與解析
+        string originalContent = File.ReadAllText(cssPath);
+        var classes = CssParser.GetClassesFromContent(originalContent, cssPath);
+        var affectedClassNames = new HashSet<string>();
 
-        try
+        // 3. 收集所有需要的替換操作
+        var replacements = new List<(int StartIndex, int BlockEnd, string NewContent)>();
+
+        foreach (var cssClass in classes)
         {
-            // 2. 讀取與解析
-            string originalContent = File.ReadAllText(cssPath);
-            var classes = CssParser.GetClassesFromContent(originalContent, cssPath);
-            var affectedClassNames = new HashSet<string>();
+            var props = CssParser.ContentToPropertiesPublic(cssClass.Content);
+            bool classModified = false;
 
-            // 3. 收集所有需要的替換操作
-            var replacements = new List<(int StartIndex, int BlockEnd, string NewContent)>();
-
-            foreach (var cssClass in classes)
+            foreach (var prop in props.ToList())
             {
-                var props = CssParser.ContentToPropertiesPublic(cssClass.Content);
-                bool classModified = false;
+                // 檢查屬性篩選
+                if (propertyFilter != null && !prop.Key.Equals(propertyFilter, StringComparison.OrdinalIgnoreCase))
+                    continue;
 
-                foreach (var prop in props.ToList())
+                bool shouldReplace = false;
+                string actualOldValue = prop.Value;
+
+                // 判斷是否需要替換
+                if (useRegex)
                 {
-                    // 檢查屬性篩選
-                    if (propertyFilter != null && !prop.Key.Equals(propertyFilter, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    bool shouldReplace = false;
-                    string actualOldValue = prop.Value;
-
-                    // 判斷是否需要替換
-                    if (useRegex)
+                    if (Regex.IsMatch(prop.Value, oldValue))
                     {
-                        if (Regex.IsMatch(prop.Value, oldValue))
-                        {
-                            shouldReplace = true;
-                        }
+                        shouldReplace = true;
                     }
-                    else
+                }
+                else
+                {
+                    if (prop.Value == oldValue)
                     {
-                        if (prop.Value == oldValue)
-                        {
-                            shouldReplace = true;
-                        }
-                    }
-
-                    if (shouldReplace)
-                    {
-                        // 執行替換
-                        string replacedValue = useRegex
-                            ? Regex.Replace(prop.Value, oldValue, newValue)
-                            : newValue;
-
-                        props[prop.Key] = replacedValue;
-                        classModified = true;
-
-                        // 記錄替換詳情
-                        result.Replacements.Add(new ReplacementDetail
-                        {
-                            ClassName = cssClass.ClassName,
-                            Property = prop.Key,
-                            OldValue = actualOldValue,
-                            NewValue = replacedValue
-                        });
-
-                        result.TotalMatches++;
-                        affectedClassNames.Add(cssClass.ClassName);
+                        shouldReplace = true;
                     }
                 }
 
-                // 如果這個 class 有修改，加入待替換列表
-                if (classModified)
+                if (shouldReplace)
                 {
-                    string newCssContent = CssParser.PropertiesToContentPublic(props, cssClass.Selector);
-                    replacements.Add((cssClass.StartIndex, cssClass.BlockEnd, newCssContent));
+                    // 執行替換
+                    string replacedValue = useRegex
+                        ? Regex.Replace(prop.Value, oldValue, newValue)
+                        : newValue;
+
+                    props[prop.Key] = replacedValue;
+                    classModified = true;
+
+                    // 記錄替換詳情
+                    result.Replacements.Add(new ReplacementDetail
+                    {
+                        ClassName = cssClass.ClassName,
+                        Property = prop.Key,
+                        OldValue = actualOldValue,
+                        NewValue = replacedValue
+                    });
+
+                    result.TotalMatches++;
+                    affectedClassNames.Add(cssClass.ClassName);
                 }
             }
 
-            // 4. 執行替換 (從後往前，避免索引偏移)
-            // Sort by StartIndex Descending
-            replacements.Sort((a, b) => b.StartIndex.CompareTo(a.StartIndex));
-
-            var sb = new StringBuilder(originalContent);
-
-            foreach (var (start, end, content) in replacements)
+            // 如果這個 class 有修改，加入待替換列表
+            if (classModified)
             {
-                // 移除舊區塊
-                sb.Remove(start, end - start + 1); // +1 to include the closing brace if BlockEnd is inclusive? 
-                // Wait, CssParser.GetClasses BlockEnd is typically the index of '}'.
-                // Let's verify if BlockEnd is inclusive.
-                // In CssParser.cs:
-                // scope.BlockEnd = index; (where index is '}')
-                // So length = end - start + 1.
-                
-                // 插入新區塊
-                sb.Insert(start, content);
+                string newCssContent = CssParser.PropertiesToContentPublic(props, cssClass.Selector);
+                replacements.Add((cssClass.StartIndex, cssClass.BlockEnd, newCssContent));
             }
-
-            // 5. 寫回檔案
-            File.WriteAllText(cssPath, sb.ToString());
-
-            // 6. 成功後刪除備份
-            if (File.Exists(backupPath))
-            {
-                File.Delete(backupPath);
-            }
-
-            result.AffectedClasses = affectedClassNames.ToList();
-            return result;
         }
-        catch (Exception ex)
+
+        // 4. 執行替換 (從後往前，避免索引偏移)
+        // Sort by StartIndex Descending
+        replacements.Sort((a, b) => b.StartIndex.CompareTo(a.StartIndex));
+
+        var sb = new StringBuilder(originalContent);
+
+        foreach (var (start, end, content) in replacements)
         {
-            // 發生錯誤，恢復備份
-            File.Copy(backupPath, cssPath, true);
-            throw new Exception($"批次替換失敗：{ex.Message}（已從備份還原）", ex);
+            // 移除舊區塊
+            // Use block Length (+1 is implied by end - start + 1 logic used elsewhere, verifying...)
+            // CssParser.GetClasses logic sets BlockEnd = index of '}'
+            // Length = BlockEnd - StartIndex + 1
+            sb.Remove(start, end - start + 1); 
+            
+            // 插入新區塊
+            sb.Insert(start, content);
         }
+
+        // 5. 寫回檔案
+        File.WriteAllText(cssPath, sb.ToString());
+
+        result.AffectedClasses = affectedClassNames.ToList();
+        return result;
     }
 }
