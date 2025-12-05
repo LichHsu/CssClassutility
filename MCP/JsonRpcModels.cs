@@ -2,27 +2,18 @@ using System.Text.Json.Serialization;
 
 namespace CssClassutility.MCP;
 
-/// <summary>
-/// JSON-RPC 請求模型
-/// </summary>
 public class JsonRpcRequest
 {
     [JsonPropertyName("jsonrpc")]
     public string JsonRpc { get; set; } = "2.0";
-    
     [JsonPropertyName("method")]
     public string Method { get; set; } = string.Empty;
-    
     [JsonPropertyName("params")]
     public System.Text.Json.JsonElement Params { get; set; }
-    
     [JsonPropertyName("id")]
     public object? Id { get; set; }
 }
 
-/// <summary>
-/// JSON-RPC 回應模型
-/// </summary>
 public class JsonRpcResponse
 {
     [JsonPropertyName("jsonrpc")]

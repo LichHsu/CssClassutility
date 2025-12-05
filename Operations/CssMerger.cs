@@ -99,9 +99,4 @@ public static class CssMerger
     }
 }
 
-public enum MergeStrategy
-{
-    Overwrite,
-    FillMissing,
-    PruneDuplicate
-}
+

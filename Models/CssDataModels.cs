@@ -1,10 +1,7 @@
 using System.Text.Json.Serialization;
 
-namespace CssClassutility.Core;
+namespace CssClassutility.Models;
 
-/// <summary>
-/// CSS Class 資料結構
-/// </summary>
 public class CssClass
 {
     [JsonPropertyName("className")]
@@ -54,4 +51,29 @@ public class CssEntityMetadata
 
     [JsonPropertyName("context")]
     public string? Context { get; set; }
+}
+
+/// <summary>
+/// CSS 樣式比較結果
+/// </summary>
+public class CssCompareResult
+{
+    [JsonPropertyName("isIdentical")]
+    public bool IsIdentical { get; set; }
+
+    [JsonPropertyName("normalizedA")]
+    public string NormalizedA { get; set; } = string.Empty;
+
+    [JsonPropertyName("normalizedB")]
+    public string NormalizedB { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 合併策略列舉
+/// </summary>
+public enum MergeStrategy
+{
+    Overwrite,
+    FillMissing,
+    PruneDuplicate
 }
