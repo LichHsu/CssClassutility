@@ -10,7 +10,7 @@ namespace CssClassutility.AI;
 public static class BatchReplacer
 {
     /// <summary>
-    /// 批次替換CSS屬性值
+    /// 批次替換CSS屬性值 (In-Memory Reverse Replacement)
     /// </summary>
     public static BatchReplaceResult BatchReplacePropertyValues(
         string cssPath,
@@ -24,7 +24,7 @@ public static class BatchReplacer
 
         var result = new BatchReplaceResult();
         
-        // 建立備份
+        // 1. 建立備份
         string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         string backupPath = $"{cssPath}.batch_backup_{timestamp}";
         File.Copy(cssPath, backupPath, true);
@@ -32,9 +32,13 @@ public static class BatchReplacer
 
         try
         {
-            var classes = CssParser.GetClasses(cssPath);
-            string content = File.ReadAllText(cssPath);
+            // 2. 讀取與解析
+            string originalContent = File.ReadAllText(cssPath);
+            var classes = CssParser.GetClassesFromContent(originalContent, cssPath);
             var affectedClassNames = new HashSet<string>();
+
+            // 3. 收集所有需要的替換操作
+            var replacements = new List<(int StartIndex, int BlockEnd, string NewContent)>();
 
             foreach (var cssClass in classes)
             {
@@ -90,16 +94,41 @@ public static class BatchReplacer
                     }
                 }
 
-                // 如果這個 class 有修改，更新檔案
+                // 如果這個 class 有修改，加入待替換列表
                 if (classModified)
                 {
                     string newCssContent = CssParser.PropertiesToContentPublic(props, cssClass.Selector);
-                    CssParser.ReplaceBlockPublic(cssPath, cssClass.StartIndex, cssClass.BlockEnd, newCssContent);
-                    
-                    // 重新讀取檔案（因為位置可能改變）
-                    content = File.ReadAllText(cssPath);
-                    classes = CssParser.GetClasses(cssPath);
+                    replacements.Add((cssClass.StartIndex, cssClass.BlockEnd, newCssContent));
                 }
+            }
+
+            // 4. 執行替換 (從後往前，避免索引偏移)
+            // Sort by StartIndex Descending
+            replacements.Sort((a, b) => b.StartIndex.CompareTo(a.StartIndex));
+
+            var sb = new StringBuilder(originalContent);
+
+            foreach (var (start, end, content) in replacements)
+            {
+                // 移除舊區塊
+                sb.Remove(start, end - start + 1); // +1 to include the closing brace if BlockEnd is inclusive? 
+                // Wait, CssParser.GetClasses BlockEnd is typically the index of '}'.
+                // Let's verify if BlockEnd is inclusive.
+                // In CssParser.cs:
+                // scope.BlockEnd = index; (where index is '}')
+                // So length = end - start + 1.
+                
+                // 插入新區塊
+                sb.Insert(start, content);
+            }
+
+            // 5. 寫回檔案
+            File.WriteAllText(cssPath, sb.ToString());
+
+            // 6. 成功後刪除備份
+            if (File.Exists(backupPath))
+            {
+                File.Delete(backupPath);
             }
 
             result.AffectedClasses = affectedClassNames.ToList();
