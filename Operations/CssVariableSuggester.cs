@@ -25,7 +25,6 @@ public static class CssVariableSuggester
             var entity = CssParser.ConvertToCssJson(cls);
             foreach (var prop in entity.Properties)
             {
-                string key = prop.Key;
                 string val = prop.Value;
 
                 // 忽略已是變數的值
@@ -34,12 +33,12 @@ public static class CssVariableSuggester
                 // 識別顏色 (Hex, RGB, HSL)
                 if (IsColor(val))
                 {
-                    AddUsage(valueCounts, val, "color", cls.Name);
+                    AddUsage(valueCounts, val, "color", cls.ClassName);
                 }
                 // 識別尺寸 (px, rem)
                 else if (IsSize(val))
                 {
-                    AddUsage(valueCounts, val, "size", cls.Name);
+                    AddUsage(valueCounts, val, "size", cls.ClassName);
                 }
             }
         }

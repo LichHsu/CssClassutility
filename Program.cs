@@ -13,6 +13,47 @@ namespace CssClassutility;
 
 public partial class Program
 {
+    private static readonly string _logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "mcp_debug_log.txt");
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
+    static async Task Main(string[] args)
+    {
+        Console.OutputEncoding = new UTF8Encoding(false);
+        Console.InputEncoding = new UTF8Encoding(false);
+
+        if (args.Length > 0)
+        {
+            if (args[0] == "--test")
+            {
+                TestRunner.RunAllTests();
+                return;
+            }
+            if (args[0] == "suggest-vars")
+            {
+                string path = args[1];
+                int threshold = args.Length > 2 ? int.Parse(args[2]) : 3;
+                Console.WriteLine(SuggestCssVariables(path, threshold));
+                return;
+            }
+            if (args[0] == "get-components")
+            {
+                string path = args[1];
+                Console.WriteLine(GetCssComponents(path));
+                return;
+            }
+        }
+
+        var server = new McpServer("CssClassutility", "1.0.0");
+        server.RegisterToolsFromAssembly(System.Reflection.Assembly.GetExecutingAssembly());
+        await server.RunAsync(args);
+    }
+
     public static string CompareCssStyle(
         [McpParameter("第一個樣式內容 (不含選擇器和大括號)")] string styleA,
         [McpParameter("第二個樣式內容")] string styleB)

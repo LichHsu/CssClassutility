@@ -459,6 +459,7 @@ public static class TestRunner
             CssSessionManager.UpdateSessionContent(session.Id, newContent);
             
             var updatedSession = CssSessionManager.GetSession(session.Id);
+            if (updatedSession == null) throw new Exception("Session 更新後無法取得");
             if (updatedSession.Content != newContent) throw new Exception("Session 內容更新失敗");
             if (!updatedSession.IsDirty) throw new Exception("Session IsDirty 狀態錯誤");
             

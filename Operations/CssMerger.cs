@@ -34,17 +34,16 @@ public static class CssMerger
             
             // 為了避免頻繁讀寫目標檔案，我們先讀取一次目標檔案的類別結構
             // 但因為我們可能會新增類別，所以每次處理一個來源檔案後，最好重新讀取目標
-            // 或者我們維護一個記憶體中的目標狀態。
             // 簡單起見，我們對每個來源檔案處理完後，寫入一次目標檔案。
             
             // 讀取目標檔案現有類別
             var targetClasses = CssParser.GetClasses(targetPath);
             var targetClassMap = targetClasses
                 .GroupBy(c => c.ClassName)
-                .ToDictionary(g => g.Key, g => g.First()); // 簡單起見，只取第一個同名類別
+                // 若有重複，簡單起見取第一個
+                .ToDictionary(g => g.Key, g => g.First());
 
-            var targetContent = File.ReadAllText(targetPath);
-            bool targetModified = false;
+            // var targetContent = File.ReadAllText(targetPath); // Unused currently in this logic
 
             foreach (var sourceClass in sourceClasses)
             {
@@ -79,63 +78,23 @@ public static class CssMerger
                             }
                             break;
                             
-                        // PruneDuplicate 在批次合併中意義不明確，通常是用來清理來源。
-                        // 在這裡我們假設是用來 "同步" 屬性，但如果是 PruneDuplicate，
-                        // 應該是 "如果目標有，就從來源移除"？但我們不修改來源。
-                        // 所以這裡 PruneDuplicate 視為不操作，或僅回報重複。
-                        // 暫時略過。
+                        // PruneDuplicate 暫時略過
                     }
 
                     if (propsChanged)
                     {
                         // 更新目標類別內容
-                        // 注意：因為我們在迴圈中修改，可能會影響後續的索引。
-                        // 但我們是修改內容，長度會變。
-                        // 為了安全，我們應該使用 ReplaceBlockPublic，它會重新讀取檔案。
-                        // 但這樣效率太差。
-                        // 更好的方式是：收集所有變更，最後一次寫入。
-                        // 但因為 ReplaceBlockPublic 是基於索引的，一次變更後索引就失效了。
-                        
-                        // 妥協方案：直接呼叫 ReplaceBlockPublic，雖然慢但安全。
+                        // 使用 ReplaceBlockPublic
                         string newContent = CssParser.PropertiesToContentPublic(targetProps, targetClass.Selector);
                         CssParser.ReplaceBlockPublic(targetPath, targetClass.StartIndex, targetClass.BlockEnd, newContent);
                         
-                        // 更新後，需要重新讀取 targetClasses 嗎？
-                        // 是的，因為索引變了。
-                        // 這會導致 O(N^2) 的複雜度。
-                        // 對於大檔案會很慢。
-                        
-                        // 優化方案：
-                        // 1. 讀取整個目標檔案到記憶體。
-                        // 2. 解析所有類別。
-                        // 3. 在記憶體中修改類別物件的屬性。
-                        // 4. 最後重新生成整個 CSS 檔案內容。
-                        
-                        // 讓我們採用優化方案。
-                        // 但我們沒有 "ReconstructCssFile" 的方法。
-                        // 我們可以利用 CssParser.GetClasses 拿到的 StartIndex/BlockEnd 來切割字串。
-                        // 但這太複雜了。
-                        
-                        // 回到簡單方案：每次修改都重讀。對於 MCP 工具來說，正確性優先於極致效能。
-                        // 且使用者通常不會一次合併幾萬個類別。
-                        
-                        // 為了避免索引失效，我們必須重新取得 targetClass
-                        // 但我們已經在迴圈裡了。
-                        
-                        // 修正策略：
-                        // 對於 "已存在" 的類別，我們使用 UpdateCssClassProperty 的邏輯 (即 ReplaceBlock)。
-                        // 為了避免索引問題，我們可以在記憶體中維護一個 Dictionary<ClassName, Properties>
-                        // 最後統一寫入？
-                        // 不，CSS 檔案包含註解和排版，重寫會遺失這些。
-                        
-                        // 再次妥協：
-                        // 既然是 "Consolidate"，我們假設目標檔案是 "乾淨" 的，或者我們不介意重排。
-                        // 但為了保留註解，我們還是得用 ReplaceBlock。
-                        // 為了避免索引失效，我們可以 "從後往前" 修改？不，我們是依賴 GetClasses 的順序。
-                        
-                        // 讓我們使用最笨但最穩的方法：
-                        // 每次修改後，重新 GetClasses。
-                        // 雖然慢，但不會錯。
+                        // 為了確保索引正確，每次修改後重新讀取
+                        // 這會比較慢，但確保正確性
+                        targetClasses = CssParser.GetClasses(targetPath);
+                        targetClassMap = targetClasses
+                            .GroupBy(c => c.ClassName)
+                            .ToDictionary(g => g.Key, g => g.First());
+
                         mergedCount++;
                     }
                 }
@@ -147,13 +106,11 @@ public static class CssMerger
                     File.AppendAllText(targetPath, newBlock);
                     addedCount++;
                     
-                    // 這裡不需要重讀，因為 Append 不會影響前面類別的索引。
-                    // 但為了讓 targetClassMap 更新，我們手動加進去？
-                    // 不，下一次迴圈如果遇到同名類別 (來源檔案中有重複定義)，
-                    // 我們希望它能被合併到剛新增的這個類別嗎？
-                    // 是的。所以需要更新 targetClassMap。
-                    // 但因為我們 Append 了，索引變了 (雖然是在後面)。
-                    // 為了簡單，我們假設來源檔案中沒有重複類別，或我們不處理來源內部的重複。
+                    // 新增後也要更新 Map，以便後續同名類別能合併
+                    targetClasses = CssParser.GetClasses(targetPath);
+                    targetClassMap = targetClasses
+                        .GroupBy(c => c.ClassName)
+                        .ToDictionary(g => g.Key, g => g.First());
                 }
             }
         }

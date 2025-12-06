@@ -27,7 +27,7 @@ public static class CssDeadCodeEliminator
             bool keep = false;
 
             // 1. Check AllowList (Always keep these)
-            if (allowSet.Contains(cls.Name))
+            if (allowSet.Contains(cls.ClassName))
             {
                 keep = true;
             }
@@ -37,7 +37,7 @@ public static class CssDeadCodeEliminator
                 keep = true;
             }
             // 3. Keep Special/Root/Keyframes (Usually start with @ or :)
-            else if (cls.Name.StartsWith("@") || cls.Name.StartsWith(":"))
+            else if (cls.ClassName.StartsWith("@") || cls.ClassName.StartsWith(":"))
             {
                 keep = true; // Conservative approach for now
             }
@@ -60,14 +60,9 @@ public static class CssDeadCodeEliminator
     {
         // Simple name match
         // usedSelectors contains simple class names like "btn", "btn-primary"
-        // cls.Name might be "btn" or "btn:hover"
+        // cls.ClassName might be "btn" or "btn:hover"
         
-        // Extract base name from cls.Name
-        string baseName = cls.Name.Split(':')[0].Split('.')[0].Trim(); // Simplified
-        // Actually cls.Name from GetClasses is usually just the selector string found in file.
-        // We need to parse valid CSS class names from selector string.
-        
-        var classNamesInSelector = ExtractClassNames(cls.Name);
+        var classNamesInSelector = ExtractClassNames(cls.Selector); // Use selector to find all classes involved
         foreach (var name in classNamesInSelector)
         {
             if (usedSelectors.Contains(name)) return true;
@@ -87,37 +82,30 @@ public static class CssDeadCodeEliminator
         return list;
     }
 
-    private static string GetRawBlock(string path, CssClass cls)
-    {
-        // In a real implementation, we would probably have the content in memory 
-        // or read it directly. CssParser.ConvertToCssJson reads it.
-        // For efficiency, CssClasses List usually should contain content if we parsed carefully.
-        // But the current CssClassDef only has Start/End indices.
-        
-        // Quick read using stream/indices would be better, but let's just read all text for MVP
-        // Optimization: Read file once outside loop.
-        
-        // Since we don't have the file content passed in, we fall back to a slower generic read
-        // or assume the caller handles IO.
-        // For this tool, let's assume we read the file once.
-        return ""; // Logic needs to be handled in the Tool wrapper to avoid multiple reads
-    }
-    
-    // Improved signature to accept content
+    // Helper placeholders if referenced elsewhere, but GenerateMinimalCss is self-contained now.
     public static string FilterContent(string cssContent, List<CssClass> classes, List<string> usedSelectors, List<string> allowList)
     {
-        var sb = new System.Text.StringBuilder();
-        // Since classes are sorted by line, we can just append
-        
-        // Need to sort classes by StartIndex to ensure order
-        classes.Sort((a, b) => a.StartIndex.CompareTo(b.StartIndex));
+        // Placeholder implementation if needed by other parts, essentially same logic but in-memory
+         var keptClasses = new List<string>();
+         var allowSet = new HashSet<string>(allowList);
+         
+         foreach (var cls in classes)
+         {
+             bool keep = false;
+             if (allowSet.Contains(cls.ClassName)) keep = true;
+             else if (IsUsed(cls, usedSelectors)) keep = true;
+             else if (cls.ClassName.StartsWith("@") || cls.ClassName.StartsWith(":")) keep = true;
 
-        // Note: This simple logic skips comments or non-class content between blocks
-        // A better approach for "Dead Code Elimination" usually means "Rebuild from AST".
-        // But "Minification" often implies preserving everything capable.
-        
-        // Let's use the Entity approach: Convert kept classes to Entities, then toString.
-        
-        return ""; // Wrapper will handle this via CssParser
+            if (keep)
+            {
+                // We don't have full content here effectively unless passed in cssContent matches indices
+                 int len = cls.BlockEnd - cls.StartIndex + 1;
+                 if (cls.StartIndex >= 0 && cls.StartIndex + len <= cssContent.Length)
+                 {
+                    keptClasses.Add(cssContent.Substring(cls.StartIndex, len));
+                 }
+            }
+         }
+         return string.Join("\n", keptClasses);
     }
 }
