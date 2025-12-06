@@ -457,6 +457,11 @@ public partial class CssParser
 
         // 解析 CSS
         var classes = GetClasses(cssPath);
+        if (classes.Count == 0)
+        {
+             throw new Exception($"解析失敗或檔案為空：在 {cssPath} 中找不到任何 CSS Class。匯出已中止以保護數據。");
+        }
+
         var createdFiles = new HashSet<string>();
 
         foreach (var cls in classes)
@@ -506,6 +511,11 @@ public partial class CssParser
                 if (entity != null) entities.Add(entity);
             }
             catch { /* 忽略解析錯誤的檔案 */ }
+        }
+
+        if (entities.Count == 0)
+        {
+            throw new Exception($"錯誤：在 {sourceDir} 中找不到任何有效的 CSS 實體 JSON。導入已中止以避免生成空檔案。");
         }
 
         // 分組處理

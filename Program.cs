@@ -187,5 +187,47 @@ public partial class Program
         return CssParser.MergeCssEntity(targetPath, sourcePath, stratEnum);
     }
 
+    [McpTool("process_css_in_memory", "在記憶體中執行一系列 CSS 操作 (Set/Remove/Merge) 是一次性寫回，大幅提升效能。")]
+    public static string ProcessCssInMemory(
+        [McpParameter("CSS 檔案路徑")] string path,
+        [McpParameter("操作列表 (JSON array of {op: 'Set'/'Remove'/'Merge', ...})")] string operationsJson)
+    {
+        var processor = new InMemoryCssProcessor(path);
+        var operations = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(operationsJson, _jsonOptions);
+        var results = new List<string>();
+
+        if (operations != null)
+        {
+            foreach (var op in operations)
+            {
+                if (!op.TryGetValue("op", out string? type)) continue;
+
+                if (type == "Set" || type == "Remove")
+                {
+                    string className = op.GetValueOrDefault("className", "");
+                    string key = op.GetValueOrDefault("key", "");
+                    string value = op.GetValueOrDefault("value", "");
+                    results.Add(processor.ProcessClass(className, type, key, value));
+                }
+                else if (type == "Merge")
+                {
+                    string source = op.GetValueOrDefault("source", "");
+                    string strategy = op.GetValueOrDefault("strategy", "Overwrite");
+                    results.Add(processor.Merge(source, strategy));
+                }
+            }
+        }
+
+        processor.Save();
+        return string.Join("\n", results);
+    }
+
+    [McpTool("get_css_components", "識別並分組 CSS 元件 (例如將 .btn, .btn:hover 歸類為同一組)。")]
+    public static string GetCssComponents([McpParameter("CSS 檔案路徑")] string path)
+    {
+        var groups = CssComponentGrouper.GroupComponents(path);
+        return JsonSerializer.Serialize(groups, _jsonPrettyOptions);
+    }
+
     #endregion
 }
