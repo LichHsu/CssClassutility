@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using CssClassUtility.Models;
+using System.Collections.Concurrent;
 
 namespace CssClassUtility.Core;
 
@@ -68,11 +68,11 @@ public static class CssSessionManager
     {
         if (_sessions.TryGetValue(id, out var session))
         {
-            string path = targetPath ?? session.OriginalFilePath 
+            string path = targetPath ?? session.OriginalFilePath
                 ?? throw new ArgumentException("未指定儲存路徑，且 Session 無原始路徑");
 
             File.WriteAllText(path, session.Content);
-            
+
             // 如果是儲存到原始路徑，重置 Dirty 狀態
             if (path == session.OriginalFilePath)
             {

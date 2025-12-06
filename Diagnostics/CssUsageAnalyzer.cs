@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using CssClassUtility.Models;
+using System.Text.RegularExpressions;
 
 namespace CssClassUtility.Diagnostics;
 
@@ -18,7 +18,8 @@ public static class CssUsageAnalyzer
         var ignoreDetails = ignorePaths ?? new[] { "bin", "obj", "node_modules", ".git", ".vs" };
 
         var files = Directory.GetFiles(projectRoot, "*.*", SearchOption.AllDirectories)
-            .Where(f => {
+            .Where(f =>
+            {
                 var relativePath = Path.GetRelativePath(projectRoot, f);
                 var segments = relativePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                 return searchExtensions.Contains(Path.GetExtension(f).ToLower()) &&

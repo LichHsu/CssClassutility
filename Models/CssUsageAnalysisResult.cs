@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace CssClassUtility.Models;
 
 public class CssUsageAnalysisResult

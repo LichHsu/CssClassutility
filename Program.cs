@@ -1,12 +1,11 @@
+using CssClassUtility.AI;
+using CssClassUtility.Models;
+using CssClassUtility.Operations;
+using Lichs.MCP.Core;
+using Lichs.MCP.Core.Attributes;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CssClassUtility.Core;
-using CssClassUtility.Models;
-using CssClassUtility.Operations;
-using CssClassUtility.AI;
-using Lichs.MCP.Core;
-using Lichs.MCP.Core.Attributes;
 
 namespace CssClassUtility;
 
@@ -53,9 +52,9 @@ internal class Program
         }
         else if (analysisType.Equals("Missing", StringComparison.OrdinalIgnoreCase))
         {
-             if (options.ClassesToCheck == null) throw new ArgumentException("Missing 分析需要 ClassesToCheck");
-             var orphans = CssAnalyzer.FindMissingClasses(path, options.ClassesToCheck);
-             return JsonSerializer.Serialize(orphans, _jsonPrettyOptions);
+            if (options.ClassesToCheck == null) throw new ArgumentException("Missing 分析需要 ClassesToCheck");
+            var orphans = CssAnalyzer.FindMissingClasses(path, options.ClassesToCheck);
+            return JsonSerializer.Serialize(orphans, _jsonPrettyOptions);
         }
         else if (analysisType.Equals("Usage", StringComparison.OrdinalIgnoreCase))
         {
@@ -63,7 +62,7 @@ internal class Program
             string root = options.ProjectRoot ?? Path.GetDirectoryName(path) ?? "";
             string className = options.ClassName ?? "";
             if (string.IsNullOrEmpty(className)) throw new ArgumentException("Usage 分析需要 ClassName");
-            
+
             var usages = UsageTracer.TraceCssUsage(className, root);
             return JsonSerializer.Serialize(usages, _jsonPrettyOptions);
         }
@@ -85,21 +84,21 @@ internal class Program
         {
             if (op.Op.Equals("Set", StringComparison.OrdinalIgnoreCase))
             {
-                 if (string.IsNullOrEmpty(op.Key) || string.IsNullOrEmpty(op.Value)) continue;
-                 processor.UpdateProperty(op.ClassName, op.Key, op.Value);
+                if (string.IsNullOrEmpty(op.Key) || string.IsNullOrEmpty(op.Value)) continue;
+                processor.UpdateProperty(op.ClassName, op.Key, op.Value);
             }
             else if (op.Op.Equals("Remove", StringComparison.OrdinalIgnoreCase))
             {
-                 if (string.IsNullOrEmpty(op.Key)) 
-                     processor.RemoveClass(op.ClassName); // If Key empty, remove class? Needs clarification. Legacy: RemoveClass(name).
-                 else
-                     processor.RemoveProperty(op.ClassName, op.Key);
+                if (string.IsNullOrEmpty(op.Key))
+                    processor.RemoveClass(op.ClassName); // If Key empty, remove class? Needs clarification. Legacy: RemoveClass(name).
+                else
+                    processor.RemoveProperty(op.ClassName, op.Key);
             }
             else if (op.Op.Equals("Merge", StringComparison.OrdinalIgnoreCase))
             {
-                 // Merge logic (Complex, usually calls CssMerger)
-                 // For now, let's assume InMemoryProcessor has Basic Merge or we skip
-                 // processor.Merge(op.Source, op.ClassName, op.Strategy); // Hypothetical
+                // Merge logic (Complex, usually calls CssMerger)
+                // For now, let's assume InMemoryProcessor has Basic Merge or we skip
+                // processor.Merge(op.Source, op.ClassName, op.Strategy); // Hypothetical
             }
         }
 
@@ -115,6 +114,6 @@ internal class Program
         CssMerger.BatchMerge(sourceFiles, outputFile, CssClassUtility.Models.MergeStrategy.Overwrite);
         return $"已合併 {sourceFiles.Count} 個檔案至 {outputFile}";
     }
-    
+
     // purge_css and get_css_info can remain simpler or also use options if needed
 }

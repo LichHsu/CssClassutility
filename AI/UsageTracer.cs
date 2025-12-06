@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using CssClassUtility.Models;
+using System.Text.RegularExpressions;
 
 namespace CssClassUtility.AI;
 

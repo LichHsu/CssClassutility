@@ -1,6 +1,5 @@
-using System.Text;
-using System.Text.Json;
 using CssClassUtility.Models;
+using System.Text;
 
 namespace CssClassUtility.Operations;
 
@@ -79,7 +78,7 @@ public class InMemoryCssProcessor
     {
         // ... (existing logic)
         string entityKey = $"|{className}";
-        
+
         if (!_entities.TryGetValue(entityKey, out var entity))
         {
             // 嘗試搜尋其他 Context
@@ -92,7 +91,7 @@ public class InMemoryCssProcessor
 
         if (operation.Equals("Set", StringComparison.OrdinalIgnoreCase))
         {
-             if (!entity.Properties.TryGetValue(key, out string? oldVal) || oldVal != value)
+            if (!entity.Properties.TryGetValue(key, out string? oldVal) || oldVal != value)
             {
                 entity.Properties[key] = value;
                 modified = true;
@@ -102,7 +101,7 @@ public class InMemoryCssProcessor
         {
             if (entity.Properties.Remove(key)) modified = true;
         }
-        
+
         return modified ? "Modified" : "No Change";
     }
 
@@ -146,7 +145,7 @@ public class InMemoryCssProcessor
     public void Save(string? outputPath = null)
     {
         string targetPath = outputPath ?? _cssPath;
-        
+
         // 分組處理 Context
         var grouped = _entities.Values.GroupBy(e => e.Metadata?.Context ?? "");
         var cssOutput = new List<string>();

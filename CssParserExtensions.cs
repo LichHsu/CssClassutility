@@ -1,7 +1,5 @@
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using CssClassUtility.Models;
+using System.Text;
 
 namespace CssClassUtility;
 
@@ -373,7 +371,7 @@ public partial class CssParser
 
         foreach (var prop in cleanContent.Split(';'))
         {
-            var parts = prop.Split([':', ], 2);
+            var parts = prop.Split([':',], 2);
             if (parts.Length == 2)
             {
                 string key = parts[0].Trim().ToLower();

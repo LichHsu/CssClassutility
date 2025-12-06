@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using CssClassUtility.Models;
+using System.Text.RegularExpressions;
 
 namespace CssClassUtility.Operations;
 
@@ -54,7 +54,7 @@ public static class CssComponentGrouper
 
         int doubleUnderscore = name.IndexOf("__");
         if (doubleUnderscore > 0) name = name.Substring(0, doubleUnderscore);
-        
+
         // 處理偽類別 (通常 Regex 只抓到 classname，不含 :hover，所以只需處理 class 名稱內的字串)
         // 但如果 selector 是 .btn:hover，Regex classname 會抓到 "btn"，這已經是我們要的了。
 

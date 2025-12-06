@@ -149,7 +149,7 @@ public static class RefactoringAdvisor
         {
             var props = CssParser.ContentToPropertiesPublic(cssClass.Content);
             var duplicates = props.GroupBy(x => x.Key).Where(g => g.Count() > 1).ToList();
-            
+
             if (duplicates.Any())
             {
                 analysis.Suggestions.Add(new RefactoringSuggestion

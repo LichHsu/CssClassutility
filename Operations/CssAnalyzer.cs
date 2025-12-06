@@ -1,5 +1,3 @@
-using CssClassUtility.Core;
-
 namespace CssClassUtility.Operations;
 
 public static class CssAnalyzer

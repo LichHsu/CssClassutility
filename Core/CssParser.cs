@@ -1,9 +1,9 @@
+using CssClassUtility.Models;
+using CssClassUtility.Operations;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using CssClassUtility.Models;
-using CssClassUtility.Operations;
 
 namespace CssClassUtility;
 
@@ -127,7 +127,7 @@ public partial class CssParser
                 {
                     if (CssRulePattern().IsMatch(selector)) type = ScopeType.Class;
                 }
-                else 
+                else
                 {
                     type = ScopeType.Media; // Or other @rules like @supports, @keyframes
                 }
@@ -148,7 +148,7 @@ public partial class CssParser
                         int blockEnd = index;
                         // Extract content excluding braces
                         string innerContent = content.Substring(blockStart + 1, blockEnd - blockStart - 1).Trim();
-                        
+
                         // Determine context (e.g., inside @media)
                         string? context = null;
                         if (scopeStack.Peek().Type == ScopeType.Media)
@@ -459,7 +459,7 @@ public partial class CssParser
         var classes = GetClasses(cssPath);
         if (classes.Count == 0)
         {
-             throw new Exception($"解析失敗或檔案為空：在 {cssPath} 中找不到任何 CSS Class。匯出已中止以保護數據。");
+            throw new Exception($"解析失敗或檔案為空：在 {cssPath} 中找不到任何 CSS Class。匯出已中止以保護數據。");
         }
 
         var createdFiles = new HashSet<string>();

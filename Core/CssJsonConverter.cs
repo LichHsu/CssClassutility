@@ -99,7 +99,7 @@ public static class CssJsonConverter
         {
             string json = File.ReadAllText(jsonFile);
             var entity = JsonSerializer.Deserialize<CssEntity>(json);
-            
+
             if (entity != null)
             {
                 string css = ConvertFromCssJson(entity);

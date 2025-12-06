@@ -1,7 +1,5 @@
-using System.Text.RegularExpressions;
-using System.Text.Json;
-using CssClassUtility.Core;
 using CssClassUtility.Models;
+using System.Text.RegularExpressions;
 
 namespace CssClassUtility.Operations;
 
@@ -47,8 +45,8 @@ public static class CssDeadCodeEliminator
                 // Reconstruct the CSS block
                 if (cls.StartIndex >= 0 && cls.BlockEnd < content.Length && cls.BlockEnd >= cls.StartIndex)
                 {
-                     int len = cls.BlockEnd - cls.StartIndex + 1;
-                     keptClasses.Add(content.Substring(cls.StartIndex, len));
+                    int len = cls.BlockEnd - cls.StartIndex + 1;
+                    keptClasses.Add(content.Substring(cls.StartIndex, len));
                 }
             }
         }
@@ -61,7 +59,7 @@ public static class CssDeadCodeEliminator
         // Simple name match
         // usedSelectors contains simple class names like "btn", "btn-primary"
         // cls.ClassName might be "btn" or "btn:hover"
-        
+
         var classNamesInSelector = ExtractClassNames(cls.Selector); // Use selector to find all classes involved
         foreach (var name in classNamesInSelector)
         {
@@ -86,26 +84,26 @@ public static class CssDeadCodeEliminator
     public static string FilterContent(string cssContent, List<CssClass> classes, List<string> usedSelectors, List<string> allowList)
     {
         // Placeholder implementation if needed by other parts, essentially same logic but in-memory
-         var keptClasses = new List<string>();
-         var allowSet = new HashSet<string>(allowList);
-         
-         foreach (var cls in classes)
-         {
-             bool keep = false;
-             if (allowSet.Contains(cls.ClassName)) keep = true;
-             else if (IsUsed(cls, usedSelectors)) keep = true;
-             else if (cls.ClassName.StartsWith("@") || cls.ClassName.StartsWith(":")) keep = true;
+        var keptClasses = new List<string>();
+        var allowSet = new HashSet<string>(allowList);
+
+        foreach (var cls in classes)
+        {
+            bool keep = false;
+            if (allowSet.Contains(cls.ClassName)) keep = true;
+            else if (IsUsed(cls, usedSelectors)) keep = true;
+            else if (cls.ClassName.StartsWith("@") || cls.ClassName.StartsWith(":")) keep = true;
 
             if (keep)
             {
                 // We don't have full content here effectively unless passed in cssContent matches indices
-                 int len = cls.BlockEnd - cls.StartIndex + 1;
-                 if (cls.StartIndex >= 0 && cls.StartIndex + len <= cssContent.Length)
-                 {
+                int len = cls.BlockEnd - cls.StartIndex + 1;
+                if (cls.StartIndex >= 0 && cls.StartIndex + len <= cssContent.Length)
+                {
                     keptClasses.Add(cssContent.Substring(cls.StartIndex, len));
-                 }
+                }
             }
-         }
-         return string.Join("\n", keptClasses);
+        }
+        return string.Join("\n", keptClasses);
     }
 }

@@ -1,4 +1,3 @@
-using CssClassUtility.Models;
 using System.Text.RegularExpressions;
 
 namespace CssClassUtility.Core;
@@ -28,26 +27,26 @@ public static class CssComparator
     {
         // 移除註解
         css = Regex.Replace(css, @"/\*[\s\S]*?\*/", "");
-        
+
         // 正規化空白
         css = Regex.Replace(css, @"\s+", " ");
-        
+
         // 移除前後空白
         css = css.Trim();
-        
+
         // 移除分號前的空白
         css = css.Replace(" ;", ";");
-        
+
         // 移除冒號後的空白
         css = css.Replace(": ", ":");
-        
+
         // 排序屬性（簡化版）
         var props = css.Split(';', StringSplitOptions.RemoveEmptyEntries)
             .Select(p => p.Trim())
             .Where(p => !string.IsNullOrEmpty(p))
             .OrderBy(p => p)
             .ToList();
-        
+
         return string.Join(";", props);
     }
 }

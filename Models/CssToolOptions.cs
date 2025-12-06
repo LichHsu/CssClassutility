@@ -14,11 +14,11 @@ public class CssEditOperation
 {
     public string Op { get; set; } = ""; // Set, Remove, Merge
     public string ClassName { get; set; } = "";
-    
+
     // For Set
     public string? Key { get; set; }
     public string? Value { get; set; }
-    
+
     // For Merge
     [McpParameter("來源格式: path/to/file.css:.className")]
     public string? Source { get; set; }

@@ -1,6 +1,6 @@
+using CssClassUtility.Models;
 using System.Text;
 using System.Text.RegularExpressions;
-using CssClassUtility.Models;
 
 namespace CssClassUtility.AI;
 
@@ -23,7 +23,7 @@ public static class BatchReplacer
             throw new FileNotFoundException("找不到檔案", cssPath);
 
         var result = new BatchReplaceResult();
-        
+
         // 2. 讀取與解析
         string originalContent = File.ReadAllText(cssPath);
         var classes = CssParser.GetClassesFromContent(originalContent, cssPath);
@@ -106,8 +106,8 @@ public static class BatchReplacer
             // Use block Length (+1 is implied by end - start + 1 logic used elsewhere, verifying...)
             // CssParser.GetClasses logic sets BlockEnd = index of '}'
             // Length = BlockEnd - StartIndex + 1
-            sb.Remove(start, end - start + 1); 
-            
+            sb.Remove(start, end - start + 1);
+
             // 插入新區塊
             sb.Insert(start, content);
         }

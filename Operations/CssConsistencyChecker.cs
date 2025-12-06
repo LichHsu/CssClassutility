@@ -1,8 +1,3 @@
-using CssClassUtility.Core;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
-
 namespace CssClassUtility.Operations;
 
 public static class CssConsistencyChecker

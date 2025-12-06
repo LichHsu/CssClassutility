@@ -31,11 +31,11 @@ public static class CssMerger
             if (!File.Exists(sourcePath)) continue;
 
             var sourceClasses = CssParser.GetClasses(sourcePath);
-            
+
             // 為了避免頻繁讀寫目標檔案，我們先讀取一次目標檔案的類別結構
             // 但因為我們可能會新增類別，所以每次處理一個來源檔案後，最好重新讀取目標
             // 簡單起見，我們對每個來源檔案處理完後，寫入一次目標檔案。
-            
+
             // 讀取目標檔案現有類別
             var targetClasses = CssParser.GetClasses(targetPath);
             var targetClassMap = targetClasses
@@ -77,8 +77,8 @@ public static class CssMerger
                                 }
                             }
                             break;
-                            
-                        // PruneDuplicate 暫時略過
+
+                            // PruneDuplicate 暫時略過
                     }
 
                     if (propsChanged)
@@ -87,7 +87,7 @@ public static class CssMerger
                         // 使用 ReplaceBlockPublic
                         string newContent = CssParser.PropertiesToContentPublic(targetProps, targetClass.Selector);
                         CssParser.ReplaceBlockPublic(targetPath, targetClass.StartIndex, targetClass.BlockEnd, newContent);
-                        
+
                         // 為了確保索引正確，每次修改後重新讀取
                         // 這會比較慢，但確保正確性
                         targetClasses = CssParser.GetClasses(targetPath);
@@ -105,7 +105,7 @@ public static class CssMerger
                     string newBlock = $"\n{sourceClass.Selector} {{\n{sourceClass.Content}\n}}";
                     File.AppendAllText(targetPath, newBlock);
                     addedCount++;
-                    
+
                     // 新增後也要更新 Map，以便後續同名類別能合併
                     targetClasses = CssParser.GetClasses(targetPath);
                     targetClassMap = targetClasses

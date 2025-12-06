@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using CssClassUtility.Models;
+using System.Text.RegularExpressions;
 
 namespace CssClassUtility.AI;
 
@@ -40,7 +40,7 @@ public static class VariableAnalyzer
                     if (prop.Key.StartsWith("--"))
                     {
                         variableDefinitions[prop.Key] = prop.Value;
-                        
+
                         // 如果找到目標變數的定義
                         if (prop.Key == variableName)
                         {
@@ -54,11 +54,11 @@ public static class VariableAnalyzer
 
         // 第二階段：找出所有使用此變數的地方
         var varPattern = new Regex($@"var\(\s*{Regex.Escape(variableName)}(?:\s*,\s*([^)]+))?\s*\)", RegexOptions.Compiled);
-        
+
         foreach (var cssClass in classes)
         {
             var props = CssParser.ContentToPropertiesPublic(cssClass.Content);
-            
+
             foreach (var prop in props)
             {
                 var match = varPattern.Match(prop.Value);
@@ -81,7 +81,7 @@ public static class VariableAnalyzer
                         // 這個變數引用了目標變數，現在找出誰使用這個變數
                         string intermediateVar = prop.Key;
                         var intermediatePattern = new Regex($@"var\(\s*{Regex.Escape(intermediateVar)}(?:\s*,\s*([^)]+))?\s*\)", RegexOptions.Compiled);
-                        
+
                         foreach (var otherClass in classes)
                         {
                             var otherProps = CssParser.ContentToPropertiesPublic(otherClass.Content);
