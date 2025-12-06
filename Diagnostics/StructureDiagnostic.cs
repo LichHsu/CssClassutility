@@ -1,6 +1,6 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Diagnostics;
+namespace CssClassUtility.Diagnostics;
 
 /// <summary>
 /// CSS 結構診斷工具

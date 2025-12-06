@@ -1,48 +1,42 @@
 # CssClassUtility
 
-A powerful MCP server for analyzing, editing, and optimizing CSS files.
+A powerful MCP server for analyzing, processing, and consolidating CSS files.
+Now supports strongly-typed parameters for enhanced AI interaction.
 
 ## Tools
 
 ### 1. `analyze_css`
-Performs read-only analysis on CSS files.
+Analyzes CSS content and usage.
 *   **Parameters**:
-    *   `path` (string): Absolute path to the CSS file.
+    *   `path` (string): Path to file or directory.
     *   `analysisType` (string):
-        *   `Variables`: Suggests extraction of repeated values (design tokens).
-        *   `Components`: Groups selectors into logical components (e.g. `.btn`, `.btn:hover`).
-        *   `Missing`: Checks for "orphaned" classes (used in Razor but missing in CSS).
-        *   `Usage`: Traces where a specific class is used in the project.
-    *   `options` (json string, optional): `{ "threshold": 3, "classesToCheck": ["classA"], "className": "btn" }`.
+        *   `Variables`: Suggests variables from repeated values.
+        *   `Components`: Groups selectors by common prefixes.
+        *   `Missing`: Finds classes used in `classesToCheck` but missing in CSS.
+        *   `Usage`: Traces usage of a class in the project.
+    *   `options`: (Object)
+        *   `threshold`: Min frequency for variable suggestion.
+        *   `classesToCheck`: List of class names (for Missing).
+        *   `className`: Target class (for Usage).
+        *   `projectRoot`: Search scope (for Usage).
 
 ### 2. `edit_css`
-Batch edits CSS in-memory for high performance.
+Batch edits CSS files (In-Memory Processing).
 *   **Parameters**:
-    *   `path` (string): Absolute path to the CSS file.
-    *   `operations` (json string): Array of operations.
-        *   `{ "op": "Set", "className": "btn", "key": "color", "value": "red" }`
-        *   `{ "op": "Remove", "className": "btn" }`
-        *   `{ "op": "Merge", "source": "other.css:.btn", "strategy": "Overwrite" }`
+    *   `path` (string): Path to CSS file.
+    *   `operations`: (List of Objects)
+        *   `op`: `Set`, `Remove` (property), `Remove` (class).
+        *   `className`: Target CSS class (e.g., `btn-primary`).
+        *   `key`: CSS property (e.g., `color`).
+        *   `value`: CSS value.
+        *   `source`: Source file path (for Merge op).
+        *   `strategy`: `Overwrite`, `FillMissing`.
 
 ### 3. `consolidate_css`
-Merges multiple CSS files into one target file.
+Merges multiple CSS files into one.
 *   **Parameters**:
-    *   `targetPath` (string): Destination file.
-    *   `sourcePaths` (string[]): List of source files.
-    *   `strategy` (string): `Overwrite` or `FillMissing`.
-
-### 4. `purge_css`
-Removes unused CSS classes (Dead Code Elimination).
-*   **Parameters**:
-    *   `path` (string): Target CSS file.
-    *   `usedClassesJson` (json string): List of used classes.
-    *   `allowListJson` (json string): Classes to strictly preserve.
-
-### 5. `get_css_info`
-Inspects a single CSS Class structure.
-*   **Parameters**:
-    *   `path` (string): CSS file.
-    *   `className` (string): Class name.
+    *   `sourceFiles` (List<string>): List of paths to merge.
+    *   `outputFile` (string): Destination path.
 
 ## Development
 Run `dotnet build` to compile.

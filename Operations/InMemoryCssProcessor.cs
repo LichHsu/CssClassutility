@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 /// <summary>
 /// 處理 CSS 的記憶體內操作，避免頻繁磁碟 I/O
@@ -44,11 +44,40 @@ public class InMemoryCssProcessor
     }
 
     /// <summary>
-    /// 對指定 Class 執行操作
+    /// 更新屬性
     /// </summary>
-    public string ProcessClass(string className, string operation, string key, string value)
+    public void UpdateProperty(string className, string key, string value)
     {
-        // 簡易搜尋，若有多個重名 Class (不同 Context)，目前優先處理 Root Context
+        ProcessClass(className, "Set", key, value);
+    }
+
+    /// <summary>
+    /// 移除屬性
+    /// </summary>
+    public void RemoveProperty(string className, string key)
+    {
+        ProcessClass(className, "Remove", key, "");
+    }
+
+    /// <summary>
+    /// 移除整個類別
+    /// </summary>
+    public void RemoveClass(string className)
+    {
+        // 簡易搜尋移除所有 Context 下的同名 Class
+        var keysToRemove = _entities.Keys.Where(k => k.EndsWith($"|{className}")).ToList();
+        foreach (var key in keysToRemove)
+        {
+            _entities.Remove(key);
+        }
+    }
+
+    /// <summary>
+    /// 對指定 Class 執行操作 (內部核心)
+    /// </summary>
+    private string ProcessClass(string className, string operation, string key, string value)
+    {
+        // ... (existing logic)
         string entityKey = $"|{className}";
         
         if (!_entities.TryGetValue(entityKey, out var entity))
@@ -74,11 +103,7 @@ public class InMemoryCssProcessor
             if (entity.Properties.Remove(key)) modified = true;
         }
         
-        if (modified)
-        {
-            return $"已更新記憶體內 Class: {className}";
-        }
-        return "無變更";
+        return modified ? "Modified" : "No Change";
     }
 
     /// <summary>

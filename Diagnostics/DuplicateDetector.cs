@@ -1,6 +1,6 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Diagnostics;
+namespace CssClassUtility.Diagnostics;
 
 /// <summary>
 /// 重複 Class 檢測器

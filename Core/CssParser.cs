@@ -2,10 +2,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
-using CssClassutility.Operations;
+using CssClassUtility.Models;
+using CssClassUtility.Operations;
 
-namespace CssClassutility;
+namespace CssClassUtility;
 
 public partial class CssParser
 {

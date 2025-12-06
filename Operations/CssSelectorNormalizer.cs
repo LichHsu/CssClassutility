@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 public static class CssSelectorNormalizer
 {

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace CssClassutility.Models;
+namespace CssClassUtility.Models;
 
 /// <summary>
 /// CSS 結構診斷結果

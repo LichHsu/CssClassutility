@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
 using System.Text.Json;
-using CssClassutility.Core;
-using CssClassutility.Models;
+using CssClassUtility.Core;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 public static class CssDeadCodeEliminator
 {

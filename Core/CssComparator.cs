@@ -1,7 +1,7 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 using System.Text.RegularExpressions;
 
-namespace CssClassutility.Core;
+namespace CssClassUtility.Core;
 
 /// <summary>
 /// CSS 樣式比較器

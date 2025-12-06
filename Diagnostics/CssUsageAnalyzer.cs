@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Diagnostics;
+namespace CssClassUtility.Diagnostics;
 
 public static class CssUsageAnalyzer
 {

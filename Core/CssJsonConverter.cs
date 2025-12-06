@@ -1,7 +1,7 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 using System.Text.Json;
 
-namespace CssClassutility.Core;
+namespace CssClassUtility.Core;
 
 /// <summary>
 /// CSS JSON 轉換器

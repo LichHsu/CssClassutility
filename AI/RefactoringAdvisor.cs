@@ -1,6 +1,6 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.AI;
+namespace CssClassUtility.AI;
 
 /// <summary>
 /// 重構建議引擎

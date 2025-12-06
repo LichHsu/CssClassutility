@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility;
+namespace CssClassUtility;
 
 /// <summary>
 /// CssParser 擴充功能：診斷、重構與進階操作

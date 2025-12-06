@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
-using CssClassutility.Core;
+using CssClassUtility.Models;
+using CssClassUtility.Core;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 public static class CssVariableSuggester
 {

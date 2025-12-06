@@ -1,6 +1,6 @@
 using System;
 
-namespace CssClassutility.Models;
+namespace CssClassUtility.Models;
 
 /// <summary>
 /// 代表一個記憶體內的 CSS 編輯工作階段

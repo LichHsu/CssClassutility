@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace CssClassutility.Models;
+namespace CssClassUtility.Models;
 
 /// <summary>
 /// 批次替換結果

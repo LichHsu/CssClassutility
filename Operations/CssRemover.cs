@@ -1,4 +1,4 @@
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 /// <summary>
 /// CSS Class 刪除工具

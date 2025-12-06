@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace CssClassutility.MCP;
+namespace CssClassUtility.MCP;
 
 public class JsonRpcRequest
 {

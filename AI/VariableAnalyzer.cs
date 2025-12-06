@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.AI;
+namespace CssClassUtility.AI;
 
 /// <summary>
 /// CSS 變數影響分析器

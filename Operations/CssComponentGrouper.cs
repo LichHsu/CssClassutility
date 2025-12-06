@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 /// <summary>
 /// 識別並分組 CSS 元件 (例如 .btn, .btn:hover => Component 'btn')

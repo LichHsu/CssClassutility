@@ -1,7 +1,7 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 using System.Text;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 /// <summary>
 /// CSS Class 合併工具

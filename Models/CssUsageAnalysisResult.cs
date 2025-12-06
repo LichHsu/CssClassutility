@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CssClassutility.Models;
+namespace CssClassUtility.Models;
 
 public class CssUsageAnalysisResult
 {

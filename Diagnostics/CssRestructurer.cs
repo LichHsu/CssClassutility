@@ -1,4 +1,4 @@
-namespace CssClassutility.Diagnostics;
+namespace CssClassUtility.Diagnostics;
 
 /// <summary>
 /// CSS 重構工具

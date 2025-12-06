@@ -1,9 +1,9 @@
-using CssClassutility.Core;
+using CssClassUtility.Core;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace CssClassutility.Operations;
+namespace CssClassUtility.Operations;
 
 public static class CssConsistencyChecker
 {

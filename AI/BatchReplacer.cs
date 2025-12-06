@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.AI;
+namespace CssClassUtility.AI;
 
 /// <summary>
 /// 批次屬性替換器

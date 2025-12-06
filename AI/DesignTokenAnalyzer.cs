@@ -1,7 +1,7 @@
-using CssClassutility.Models;
+using CssClassUtility.Models;
 using System.Text.RegularExpressions;
 
-namespace CssClassutility.AI;
+namespace CssClassUtility.AI;
 
 /// <summary>
 /// 設計 Token 識別分析器

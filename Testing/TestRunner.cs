@@ -1,13 +1,13 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using CssClassutility.AI;
-using CssClassutility.Models;
-using CssClassutility.Core;
-using CssClassutility.Operations;
-using CssClassutility.Diagnostics;
+using CssClassUtility.AI;
+using CssClassUtility.Models;
+using CssClassUtility.Core;
+using CssClassUtility.Operations;
+using CssClassUtility.Diagnostics;
 
-namespace CssClassutility.Testing;
+namespace CssClassUtility.Testing;
 
 /// <summary>
 /// 測試執行器

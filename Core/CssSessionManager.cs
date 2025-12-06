@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using CssClassutility.Models;
+using CssClassUtility.Models;
 
-namespace CssClassutility.Core;
+namespace CssClassUtility.Core;
 
 /// <summary>
 /// 管理 CSS 編輯工作階段
