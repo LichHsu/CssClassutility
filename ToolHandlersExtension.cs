@@ -4,6 +4,7 @@ using CssClassutility.Diagnostics;
 using CssClassutility.Models;
 using CssClassutility.Operations;
 using System.Text.Json;
+using Lichs.MCP.Core.Attributes;
 
 namespace CssClassutility;
 
@@ -12,601 +13,220 @@ namespace CssClassutility;
 /// </summary>
 public partial class Program
 {
-    /// <summary>
-    /// 取得新增的工具定義
-    /// </summary>
-    public static object[] GetExtendedToolDefinitions()
+    private static readonly JsonSerializerOptions _jsonPrettyOptions = new()
     {
-        return
-        [
-            // 13. diagnosis_css_struct
-            new
-            {
-                name = "diagnosis_css_struct",
-                description = "診斷 CSS 結構完整性：檢查大括號配對、偵測重複 Class。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" }
-                    },
-                    required = new[] { "path" }
-                }
-            },
-            // 14. get_duplicate_classes
-            new
-            {
-                name = "get_duplicate_classes",
-                description = "回傳 CSS 檔案中重複的 Class 列表。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" }
-                    },
-                    required = new[] { "path" }
-                }
-            },
-            // 15. restructure_css
-            new
-            {
-                name = "restructure_css",
-                description = "重構 CSS 檔案：去除多餘空行、按 Class 名稱排序。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" }
-                    },
-                    required = new[] { "path" }
-                }
-            },
-            // 16. take_css_class
-            new
-            {
-                name = "take_css_class",
-                description = "回傳指定 Class 的原始 CSS 文字。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
-                        className = new { type = "string", description = "Class 名稱 (不含點號)" },
-                        index = new { type = "integer", description = "若有多個同名 Class，指定第幾個 (0-based，預設 0)" }
-                    },
-                    required = new[] { "path", "className" }
-                }
-            },
-            // 17. merge_css_class_from_file
-            new
-            {
-                name = "merge_css_class_from_file",
-                description = "從另一個 CSS 檔案合併指定 Class 的屬性。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        targetPath = new { type = "string", description = "目標 CSS 檔案絕對路徑" },
-                        targetClassName = new { type = "string", description = "目標 Class 名稱" },
-                        sourcePath = new { type = "string", description = "來源 CSS 檔案絕對路徑" },
-                        sourceClassName = new { type = "string", description = "來源 Class 名稱" },
-                        strategy = new { type = "string", @enum = new[] { "Overwrite", "FillMissing", "PruneDuplicate" } },
-                        targetIndex = new { type = "integer", description = "目標 Class 索引 (0-based)" },
-                        sourceIndex = new { type = "integer", description = "來源 Class 索引 (0-based)" }
-                    },
-                    required = new[] { "targetPath", "targetClassName", "sourcePath", "sourceClassName" }
-                }
-            },
-            // 18. identify_design_tokens
-            new
-            {
-                name = "identify_design_tokens",
-                description = "識別 CSS 檔案中可轉換為設計 token 的值（顏色、間距、字體等），回傳重複值的統計與建議的 token 名稱。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
-                        minOccurrences = new { type = "integer", description = "最少出現次數才納入建議（預設 2）" }
-                    },
-                    required = new[] { "path" }
-                }
-            },
-            // 19. trace_css_usage
-            new
-            {
-                name = "trace_css_usage",
-                description = "追蹤 CSS class 在專案中的使用位置（支援 HTML/Razor/JSX/Vue），回傳所有使用該 class 的檔案與行號。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        className = new { type = "string", description = "要追蹤的 class 名稱（不含點號）" },
-                        projectRoot = new { type = "string", description = "專案根目錄路徑" },
-                        fileExtensions = new { type = "array", items = new { type = "string" }, description = "要搜尋的副檔名（例如 ['.razor', '.html']，預設包含常見格式）" }
-                    },
-                    required = new[] { "className", "projectRoot" }
-                }
-            },
-            // 20. suggest_css_refactoring
-            new
-            {
-                name = "suggest_css_refactoring",
-                description = "分析 CSS 檔案並提供智能重構建議（提取共用屬性、使用 token、合併相似 class 等）。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
-                        minPriority = new { type = "integer", description = "最低優先級（1-10，預設 1，數值越高代表越重要）" }
-                    },
-                    required = new[] { "path" }
-                }
-            },
-            // 21. batch_replace_property_values
-            new
-            {
-                name = "batch_replace_property_values",
-                description = "在多個 class 中批次替換特定屬性值（支援精確匹配或正則表達式）",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
-                        oldValue = new { type = "string", description = "要替換的舊值（或正則表達式模式）" },
-                        newValue = new { type = "string", description = "新值" },
-                        propertyFilter = new { type = "string", description = "僅替換特定屬性的值（例如 'padding'，可選）" },
-                        useRegex = new { type = "boolean", description = "是否將 oldValue 視為正則表達式（預設 false）" }
-                    },
-                    required = new[] { "path", "oldValue", "newValue" }
-                }
-            },
-            // 22. analyze_variable_impact
-            new
-            {
-                name = "analyze_variable_impact",
-                description = "分析修改某個 CSS 變數會影響哪些 class（包括直接與間接引用）",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        path = new { type = "string", description = "CSS 檔案的絕對路徑" },
-                        variableName = new { type = "string", description = "CSS 變數名稱（例如 '--primary-color'）" }
-                    },
-                    required = new[] { "path", "variableName" }
-                }
-            },
-            // 23. start_css_session
-            new
-            {
-                name = "start_css_session",
-                description = "開啟一個新的 CSS 編輯工作階段 (可選載入檔案)。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        filePath = new { type = "string", description = "要載入的 CSS 檔案路徑 (可選)" }
-                    }
-                }
-            },
-            // 24. get_css_session
-            new
-            {
-                name = "get_css_session",
-                description = "取得指定工作階段的詳細資訊。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        sessionId = new { type = "string", description = "工作階段 ID" }
-                    },
-                    required = new[] { "sessionId" }
-                }
-            },
-            // 25. update_css_session_content
-            new
-            {
-                name = "update_css_session_content",
-                description = "更新工作階段的 CSS 內容。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        sessionId = new { type = "string", description = "工作階段 ID" },
-                        newContent = new { type = "string", description = "新的 CSS 內容" }
-                    },
-                    required = new[] { "sessionId", "newContent" }
-                }
-            },
-            // 26. save_css_session
-            new
-            {
-                name = "save_css_session",
-                description = "將工作階段的內容儲存至檔案。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        sessionId = new { type = "string", description = "工作階段 ID" },
-                        targetPath = new { type = "string", description = "儲存目標路徑 (若未指定則使用原始路徑)" }
-                    },
-                    required = new[] { "sessionId" }
-                }
-            },
-            // 27. close_css_session
-            new
-            {
-                name = "close_css_session",
-                description = "關閉工作階段。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        sessionId = new { type = "string", description = "工作階段 ID" }
-                    },
-                    required = new[] { "sessionId" }
-                }
-            },
-            // 28. list_css_sessions
-            new
-            {
-                name = "list_css_sessions",
-                description = "列出所有活躍的工作階段。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new { }
-                }
-            },
-            // 29. consolidate_css_files
-            new
-            {
-                name = "consolidate_css_files",
-                description = "批次合併多個 CSS 檔案到目標檔案。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        sourcePaths = new { type = "array", items = new { type = "string" }, description = "來源 CSS 檔案路徑列表 (可選)" },
-                        sourcePathsFile = new { type = "string", description = "包含來源路徑的檔案 (JSON 陣列或純文字行) (優先於 sourcePaths)" },
-                        sourceDirectory = new { type = "string", description = "來源目錄路徑 (可選)" },
-                        targetPath = new { type = "string", description = "目標 CSS 檔案路徑" },
-                        strategy = new { type = "string", @enum = new[] { "Overwrite", "FillMissing" }, description = "合併策略" }
-                    },
-                    required = new[] { "targetPath" }
-                }
-            },
-            // 30. analyze_css_usage
-            new
-            {
-                name = "analyze_css_usage",
-                description = "全域分析 CSS 使用狀況：比對 CSS 檔案定義與專案中的實際使用，找出 Unused 與 Undefined Class。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        cssPath = new { type = "string", description = "來源 CSS 檔案路徑" },
-                        projectRoot = new { type = "string", description = "要掃描的專案根目錄" },
-                        fileExtensions = new { type = "array", items = new { type = "string" }, description = "要掃描的副檔名 (預設 .razor, .html)" },
-                        ignorePaths = new { type = "array", items = new { type = "string" }, description = "要忽略的目錄名稱 (預設 bin, obj, node_modules)" }
-                    },
-                    required = new[] { "cssPath", "projectRoot" }
-                }
-            },
-            // 31. check_missing_classes
-            new
-            {
-                name = "check_missing_classes",
-                description = "檢查提供的 Class 列表是否存在於指定的 Global CSS 檔案中。",
-                inputSchema = new
-                {
-                    type = "object",
-                    properties = new
-                    {
-                        cssPath = new { type = "string", description = "Global/Theme CSS 檔案路徑" },
-                        classes = new { type = "array", items = new { type = "string" }, description = "要檢查的 Class 列表 (可選)" },
-                        classesFilePath = new { type = "string", description = "包含 Class 列表的檔案路徑 (JSON 陣列或純文字行) (優先於 classes)" }
-                    },
-                    required = new[] { "cssPath" }
-                }
-            }
-        ];
-    }
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 
-    /// <summary>
-    /// 處理新增的工具呼叫
-    /// </summary>
-    public static string? HandleExtendedToolCall(string name, JsonElement args)
+    [McpTool("diagnosis_css_struct", "診斷 CSS 結構完整性：檢查大括號配對、偵測重複 Class。")]
+    public static string DiagnosisCssStruct([McpParameter("CSS 檔案的絕對路徑")] string path)
     {
-        return name switch
-        {
-            "diagnosis_css_struct" => HandleDiagnosisCssStruct(args),
-            "get_duplicate_classes" => HandleGetDuplicateClasses(args),
-            "restructure_css" => HandleRestructureCss(args),
-            "take_css_class" => HandleTakeCssClass(args),
-            "merge_css_class_from_file" => HandleMergeCssClassFromFile(args),
-            "identify_design_tokens" => HandleIdentifyDesignTokens(args),
-            "trace_css_usage" => HandleTraceCssUsage(args),
-            "suggest_css_refactoring" => HandleSuggestRefactoring(args),
-            "batch_replace_property_values" => HandleBatchReplacePropertyValues(args),
-            "analyze_variable_impact" => HandleAnalyzeVariableImpact(args),
-            "start_css_session" => HandleStartCssSession(args),
-            "get_css_session" => HandleGetCssSession(args),
-            "update_css_session_content" => HandleUpdateCssSessionContent(args),
-            "save_css_session" => HandleSaveCssSession(args),
-            "close_css_session" => HandleCloseCssSession(args),
-            "list_css_sessions" => HandleListCssSessions(args),
-            "consolidate_css_files" => HandleConsolidateCssFiles(args),
-            "analyze_css_usage" => HandleAnalyzeCssUsage(args),
-            "check_missing_classes" => HandleCheckMissingClasses(args),
-            _ => null // 不是擴充工具
-        };
-    }
-
-    private static string HandleDiagnosisCssStruct(JsonElement args)
-    {
-        string path = args.GetProperty("path").GetString()!;
         var result = CssParser.DiagnosisCssStruct(path);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleGetDuplicateClasses(JsonElement args)
+    [McpTool("get_duplicate_classes", "回傳 CSS 檔案中重複的 Class 列表。")]
+    public static string GetDuplicateClasses([McpParameter("CSS 檔案的絕對路徑")] string path)
     {
-        string path = args.GetProperty("path").GetString()!;
         var result = CssParser.GetDuplicateClasses(path);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleRestructureCss(JsonElement args)
+    [McpTool("restructure_css", "重構 CSS 檔案：去除多餘空行、按 Class 名稱排序。")]
+    public static string RestructureCss([McpParameter("CSS 檔案的絕對路徑")] string path)
     {
-        string path = args.GetProperty("path").GetString()!;
         return CssParser.RestructureCss(path);
     }
 
-    private static string HandleTakeCssClass(JsonElement args)
+    [McpTool("take_css_class", "回傳指定 Class 的原始 CSS 文字。")]
+    public static string TakeCssClass(
+        [McpParameter("CSS 檔案的絕對路徑")] string path,
+        [McpParameter("Class 名稱 (不含點號)")] string className,
+        [McpParameter("若有多個同名 Class，指定第幾個 (0-based，預設 0)", false)] int index = 0)
     {
-        string path = args.GetProperty("path").GetString()!;
-        string className = args.GetProperty("className").GetString()!;
-        int index = args.TryGetProperty("index", out var i) ? i.GetInt32() : 0;
         return CssParser.TakeCssClass(path, className, index);
     }
 
-    private static string HandleMergeCssClassFromFile(JsonElement args)
+    [McpTool("merge_css_class_from_file", "從另一個 CSS 檔案合併指定 Class 的屬性。")]
+    public static string MergeCssClassFromFile(
+        [McpParameter("目標 CSS 檔案絕對路徑")] string targetPath,
+        [McpParameter("目標 Class 名稱")] string targetClassName,
+        [McpParameter("來源 CSS 檔案絕對路徑")] string sourcePath,
+        [McpParameter("來源 Class 名稱")] string sourceClassName,
+        [McpParameter("合併策略 (Overwrite, FillMissing, PruneDuplicate)", false)] string strategy = "Overwrite",
+        [McpParameter("目標 Class 索引 (0-based)", false)] int targetIndex = 0,
+        [McpParameter("來源 Class 索引 (0-based)", false)] int sourceIndex = 0)
     {
-        string targetPath = args.GetProperty("targetPath").GetString()!;
-        string targetClassName = args.GetProperty("targetClassName").GetString()!;
-        string sourcePath = args.GetProperty("sourcePath").GetString()!;
-        string sourceClassName = args.GetProperty("sourceClassName").GetString()!;
-        string strategyStr = args.TryGetProperty("strategy", out var s) ? s.GetString() ?? "Overwrite" : "Overwrite";
-        int targetIndex = args.TryGetProperty("targetIndex", out var ti) ? ti.GetInt32() : 0;
-        int sourceIndex = args.TryGetProperty("sourceIndex", out var si) ? si.GetInt32() : 0;
-
-        var strategy = Enum.Parse<MergeStrategy>(strategyStr, true);
+        var stratEnum = Enum.Parse<MergeStrategy>(strategy, true);
         return CssParser.MergeCssClassFromFile(
             targetPath, targetClassName,
             sourcePath, sourceClassName,
-            strategy, targetIndex, sourceIndex);
+            stratEnum, targetIndex, sourceIndex);
     }
 
-    private static string HandleIdentifyDesignTokens(JsonElement args)
+    [McpTool("identify_design_tokens", "識別 CSS 檔案中可轉換為設計 token 的值（顏色、間距、字體等），回傳重複值的統計與建議的 token 名稱。")]
+    public static string IdentifyDesignTokens(
+        [McpParameter("CSS 檔案的絕對路徑")] string path,
+        [McpParameter("最少出現次數才納入建議（預設 2）", false)] int minOccurrences = 2)
     {
-        string path = args.GetProperty("path").GetString()!;
-        int minOccurrences = args.TryGetProperty("minOccurrences", out var m) ? m.GetInt32() : 2;
-
         var result = DesignTokenAnalyzer.IdentifyDesignTokens(path, minOccurrences);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleTraceCssUsage(JsonElement args)
+    [McpTool("trace_css_usage", "追蹤 CSS class 在專案中的使用位置（支援 HTML/Razor/JSX/Vue），回傳所有使用該 class 的檔案與行號。")]
+    public static string TraceCssUsage(
+        [McpParameter("要追蹤的 class 名稱（不含點號）")] string className,
+        [McpParameter("專案根目錄路徑")] string projectRoot,
+        [McpParameter("要搜尋的副檔名（例如 ['.razor', '.html']，預設包含常見格式）", false)] string[]? fileExtensions = null)
     {
-        string className = args.GetProperty("className").GetString()!;
-        string projectRoot = args.GetProperty("projectRoot").GetString()!;
-        string[]? extensions = null;
-
-        if (args.TryGetProperty("fileExtensions", out var ext))
-        {
-            var list = new List<string>();
-            foreach (var item in ext.EnumerateArray())
-            {
-                var val = item.GetString();
-                if (val != null) list.Add(val);
-            }
-            extensions = list.ToArray();
-        }
-
-        var result = UsageTracer.TraceCssUsage(className, projectRoot, extensions);
+        var result = UsageTracer.TraceCssUsage(className, projectRoot, fileExtensions);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleSuggestRefactoring(JsonElement args)
+    [McpTool("suggest_css_refactoring", "分析 CSS 檔案並提供智能重構建議（提取共用屬性、使用 token、合併相似 class 等）。")]
+    public static string SuggestRefactoring(
+        [McpParameter("CSS 檔案的絕對路徑")] string path,
+        [McpParameter("最低優先級（1-10，預設 1，數值越高代表越重要）", false)] int minPriority = 1)
     {
-        string path = args.GetProperty("path").GetString()!;
-        int minPriority = args.TryGetProperty("minPriority", out var p) ? p.GetInt32() : 1;
-
         var result = RefactoringAdvisor.SuggestRefactoring(path, minPriority);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleBatchReplacePropertyValues(JsonElement args)
+    [McpTool("batch_replace_property_values", "在多個 class 中批次替換特定屬性值（支援精確匹配或正則表達式）")]
+    public static string BatchReplacePropertyValues(
+        [McpParameter("CSS 檔案的絕對路徑")] string path,
+        [McpParameter("要替換的舊值（或正則表達式模式）")] string oldValue,
+        [McpParameter("新值")] string newValue,
+        [McpParameter("僅替換特定屬性的值（例如 'padding'，可選）", false)] string? propertyFilter = null,
+        [McpParameter("是否將 oldValue 視為正則表達式（預設 false）", false)] bool useRegex = false)
     {
-        string path = args.GetProperty("path").GetString()!;
-        string oldValue = args.GetProperty("oldValue").GetString()!;
-        string newValue = args.GetProperty("newValue").GetString()!;
-        string? propertyFilter = args.TryGetProperty("propertyFilter", out var p) ? p.GetString() : null;
-        bool useRegex = args.TryGetProperty("useRegex", out var r) && r.GetBoolean();
-
         var result = BatchReplacer.BatchReplacePropertyValues(path, oldValue, newValue, propertyFilter, useRegex);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleAnalyzeVariableImpact(JsonElement args)
+    [McpTool("analyze_variable_impact", "分析修改某個 CSS 變數會影響哪些 class（包括直接與間接引用）")]
+    public static string AnalyzeVariableImpact(
+        [McpParameter("CSS 檔案的絕對路徑")] string path,
+        [McpParameter("CSS 變數名稱（例如 '--primary-color'）")] string variableName)
     {
-        string path = args.GetProperty("path").GetString()!;
-        string variableName = args.GetProperty("variableName").GetString()!;
-
         var result = VariableAnalyzer.AnalyzeVariableImpact(path, variableName);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 
-    private static string HandleStartCssSession(JsonElement args)
+    [McpTool("start_css_session", "開啟一個新的 CSS 編輯工作階段 (可選載入檔案)。")]
+    public static string StartCssSession([McpParameter("要載入的 CSS 檔案路徑 (可選)", false)] string? filePath = null)
     {
-        string? filePath = args.TryGetProperty("filePath", out var f) ? f.GetString() : null;
         var session = CssSessionManager.CreateSession(filePath);
         return JsonSerializer.Serialize(session, _jsonPrettyOptions);
     }
 
-    private static string HandleGetCssSession(JsonElement args)
+    [McpTool("get_css_session", "取得指定工作階段的詳細資訊。")]
+    public static string GetCssSession([McpParameter("工作階段 ID")] string sessionId)
     {
-        string sessionId = args.GetProperty("sessionId").GetString()!;
         var session = CssSessionManager.GetSession(sessionId);
         return JsonSerializer.Serialize(session, _jsonPrettyOptions);
     }
 
-    private static string HandleUpdateCssSessionContent(JsonElement args)
+    [McpTool("update_css_session_content", "更新工作階段的 CSS 內容。")]
+    public static string UpdateCssSessionContent(
+        [McpParameter("工作階段 ID")] string sessionId,
+        [McpParameter("新的 CSS 內容")] string newContent)
     {
-        string sessionId = args.GetProperty("sessionId").GetString()!;
-        string newContent = args.GetProperty("newContent").GetString()!;
         CssSessionManager.UpdateSessionContent(sessionId, newContent);
         var session = CssSessionManager.GetSession(sessionId);
         return JsonSerializer.Serialize(session, _jsonPrettyOptions);
     }
 
-    private static string HandleSaveCssSession(JsonElement args)
+    [McpTool("save_css_session", "將工作階段的內容儲存至檔案。")]
+    public static string SaveCssSession(
+        [McpParameter("工作階段 ID")] string sessionId,
+        [McpParameter("儲存目標路徑 (若未指定則使用原始路徑)", false)] string? targetPath = null)
     {
-        string sessionId = args.GetProperty("sessionId").GetString()!;
-        string? targetPath = args.TryGetProperty("targetPath", out var t) ? t.GetString() : null;
         CssSessionManager.SaveSession(sessionId, targetPath);
         return $"工作階段 {sessionId} 已儲存至 {(targetPath ?? "原始路徑")}";
     }
 
-    private static string HandleCloseCssSession(JsonElement args)
+    [McpTool("close_css_session", "關閉工作階段。")]
+    public static string CloseCssSession([McpParameter("工作階段 ID")] string sessionId)
     {
-        string sessionId = args.GetProperty("sessionId").GetString()!;
         CssSessionManager.CloseSession(sessionId);
         return $"工作階段 {sessionId} 已關閉";
     }
 
-    private static string HandleListCssSessions(JsonElement args)
+    [McpTool("list_css_sessions", "列出所有活躍的工作階段。")]
+    public static string ListCssSessions()
     {
         var sessions = CssSessionManager.ListSessions();
         return JsonSerializer.Serialize(sessions, _jsonPrettyOptions);
     }
 
-    private static string HandleConsolidateCssFiles(JsonElement args)
+    [McpTool("consolidate_css_files", "批次合併多個 CSS 檔案到目標檔案。")]
+    public static string ConsolidateCssFiles(
+        [McpParameter("目標 CSS 檔案路徑")] string targetPath,
+        [McpParameter("來源 CSS 檔案路徑列表 (可選)", false)] string[]? sourcePaths = null,
+        [McpParameter("包含來源路徑的檔案 (JSON 陣列或純文字行) (優先於 sourcePaths)", false)] string? sourcePathsFile = null,
+        [McpParameter("來源目錄路徑 (可選)", false)] string? sourceDirectory = null,
+        [McpParameter("合併策略 (Overwrite, FillMissing)", false)] string strategy = "Overwrite")
     {
-        string targetPath = args.GetProperty("targetPath").GetString()!;
-        string strategyStr = args.TryGetProperty("strategy", out var s) ? s.GetString() ?? "Overwrite" : "Overwrite";
-        var strategy = Enum.Parse<MergeStrategy>(strategyStr, true);
+        var stratEnum = Enum.Parse<MergeStrategy>(strategy, true);
 
         // Check for file-based input first (Standardization)
-        if (args.TryGetProperty("sourcePathsFile", out var spf))
+        if (!string.IsNullOrEmpty(sourcePathsFile))
         {
-             string pathsFile = spf.GetString()!;
-             return CssMerger.BatchMerge(pathsFile, targetPath, strategy);
+             return CssMerger.BatchMerge(sourcePathsFile, targetPath, stratEnum);
         }
 
-        var sourcePaths = new List<string>();
+        var pathsList = new List<string>();
 
-        if (args.TryGetProperty("sourcePaths", out var paths))
+        if (sourcePaths != null)
         {
-            foreach (var item in paths.EnumerateArray())
-            {
-                var val = item.GetString();
-                if (val != null) sourcePaths.Add(val);
-            }
+            pathsList.AddRange(sourcePaths);
         }
 
-        if (args.TryGetProperty("sourceDirectory", out var dir))
+        if (!string.IsNullOrEmpty(sourceDirectory) && Directory.Exists(sourceDirectory))
         {
-            string? dirPath = dir.GetString();
-            if (!string.IsNullOrEmpty(dirPath) && Directory.Exists(dirPath))
-            {
-                sourcePaths.AddRange(Directory.GetFiles(dirPath, "*.css"));
-            }
+            pathsList.AddRange(Directory.GetFiles(sourceDirectory, "*.css"));
         }
 
-        if (sourcePaths.Count == 0)
+        if (pathsList.Count == 0)
         {
             throw new ArgumentException("必須提供 sourcePaths, sourcePathsFile 或 sourceDirectory");
         }
 
-        return CssMerger.BatchMerge(sourcePaths.Distinct(), targetPath, strategy);
+        return CssMerger.BatchMerge(pathsList.Distinct(), targetPath, stratEnum);
     }
 
-    private static string HandleAnalyzeCssUsage(JsonElement args)
+    [McpTool("analyze_css_usage", "全域分析 CSS 使用狀況：比對 CSS 檔案定義與專案中的實際使用，找出 Unused 與 Undefined Class。")]
+    public static string AnalyzeCssUsage(
+        [McpParameter("來源 CSS 檔案路徑")] string cssPath,
+        [McpParameter("要掃描的專案根目錄")] string projectRoot,
+        [McpParameter("要掃描的副檔名 (預設 .razor, .html)", false)] string[]? fileExtensions = null,
+        [McpParameter("要忽略的目錄名稱 (預設 bin, obj, node_modules)", false)] string[]? ignorePaths = null)
     {
-        string cssPath = args.GetProperty("cssPath").GetString()!;
-        string projectRoot = args.GetProperty("projectRoot").GetString()!;
-        string[]? fileExtensions = null;
-        string[]? ignorePaths = null;
-
-        if (args.TryGetProperty("fileExtensions", out var fExt))
-        {
-            var list = new List<string>();
-            foreach (var item in fExt.EnumerateArray()) list.Add(item.GetString()!);
-            fileExtensions = list.ToArray();
-        }
-
-        if (args.TryGetProperty("ignorePaths", out var iPaths))
-        {
-            var list = new List<string>();
-            foreach (var item in iPaths.EnumerateArray()) list.Add(item.GetString()!);
-            ignorePaths = list.ToArray();
-        }
-
-        var result = CssUsageAnalyzer.AnalyzeUsage(cssPath, projectRoot, fileExtensions, ignorePaths);
-        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+        return JsonSerializer.Serialize(CssUsageAnalyzer.AnalyzeUsage(cssPath, projectRoot, fileExtensions, ignorePaths), _jsonPrettyOptions);
     }
 
-    private static string HandleCheckMissingClasses(JsonElement args)
+    [McpTool("check_missing_classes", "檢查提供的 Class 列表是否存在於指定的 Global CSS 檔案中。")]
+    public static string CheckMissingClasses(
+        [McpParameter("Global/Theme CSS 檔案路徑")] string cssPath,
+        [McpParameter("要檢查的 Class 列表 (可選)", false)] string[]? classes = null,
+        [McpParameter("包含 Class 列表的檔案路徑 (JSON 陣列或純文字行) (優先於 classes)", false)] string? classesFilePath = null)
     {
-        string cssPath = args.GetProperty("cssPath").GetString()!;
-        var classes = new List<string>();
+        var classesList = new List<string>();
 
-        if (args.TryGetProperty("classesFilePath", out var cfp))
+        if (!string.IsNullOrEmpty(classesFilePath) && File.Exists(classesFilePath))
         {
-            string filePath = cfp.GetString()!;
-            if (File.Exists(filePath))
-            {
-               string content = File.ReadAllText(filePath);
-               if (content.TrimStart().StartsWith("["))
-               {
-                    try { classes.AddRange(JsonSerializer.Deserialize<string[]>(content) ?? Array.Empty<string>()); }
-                    catch { classes.AddRange(File.ReadLines(filePath)); }
-               }
-               else
-               {
-                   classes.AddRange(File.ReadLines(filePath));
-               }
-            }
+            try { classesList.AddRange(JsonSerializer.Deserialize<string[]>(File.ReadAllText(classesFilePath)) ?? Array.Empty<string>()); }
+            catch { classesList.AddRange(File.ReadLines(classesFilePath)); }
         }
-        else if (args.TryGetProperty("classes", out var c))
+        else if (classes != null)
         {
-            foreach (var item in c.EnumerateArray())
-            {
-                var s = item.GetString();
-                if (s != null) classes.Add(s);
-            }
+            classesList.AddRange(classes);
         }
         
-        var result = CssConsistencyChecker.CheckMissingClasses(cssPath, classes);
+        var result = CssConsistencyChecker.CheckMissingClasses(cssPath, classesList);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 }
