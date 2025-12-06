@@ -13,4 +13,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Lichs.MCP.Core\Lichs.MCP.Core.csproj" />
+  </ItemGroup>
+
 </Project>
