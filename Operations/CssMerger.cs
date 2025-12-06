@@ -161,6 +161,39 @@ public static class CssMerger
         return $"合併完成。更新了 {mergedCount} 個類別，新增了 {addedCount} 個類別。";
     }
 
+    public static string BatchMerge(
+        string sourcePathsFile,
+        string targetPath,
+        MergeStrategy strategy)
+    {
+        if (!File.Exists(sourcePathsFile))
+        {
+            throw new FileNotFoundException("Source paths file not found", sourcePathsFile);
+        }
+
+        string content = File.ReadAllText(sourcePathsFile);
+        IEnumerable<string> paths;
+
+        if (content.TrimStart().StartsWith("["))
+        {
+            // Try JSON
+            try
+            {
+                paths = System.Text.Json.JsonSerializer.Deserialize<string[]>(content) ?? Array.Empty<string>();
+            }
+            catch
+            {
+                paths = File.ReadLines(sourcePathsFile);
+            }
+        }
+        else
+        {
+            paths = File.ReadLines(sourcePathsFile);
+        }
+
+        return BatchMerge(paths.Where(p => !string.IsNullOrWhiteSpace(p)), targetPath, strategy);
+    }
+
     /// <summary>
     /// 合併 CSS Class（從 JSON 實體或另一個檔案）
     /// </summary>

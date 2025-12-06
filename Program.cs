@@ -64,6 +64,16 @@ public partial class Program
                 Console.WriteLine(JsonSerializer.Serialize(result, _jsonPrettyOptions));
                 return;
             }
+            if (args[0] == "check-missing")
+            {
+               // Usage: check-missing <cssPath> <classesFile>
+                string cssPath = args[1];
+                string classesFile = args[2];
+                var classes = File.ReadLines(classesFile);
+                var result = CssConsistencyChecker.CheckMissingClasses(cssPath, classes);
+                Console.WriteLine(JsonSerializer.Serialize(result, _jsonPrettyOptions));
+                return;
+            }
         }
 
         // 2. 啟動記錄
@@ -75,27 +85,10 @@ public partial class Program
             {
                 // 3. 讀取輸入並記錄
                 string? line = await Console.In.ReadLineAsync();
-
-                // 如果是 null 代表串流結束 (Pipe 斷開)
-                if (line == null)
-                {
-                    Log("Input stream closed (null received). Exiting.");
-                    break;
-                }
-
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                Log($"[RECV]: {line}");
+                if (line == null) break;
 
                 var request = JsonSerializer.Deserialize<JsonRpcRequest>(line, _jsonOptions);
-                if (request == null)
-                {
-                    Log("[WARN]: Deserialization returned null.");
-                    continue;
-                }
+                if (request == null) continue;
 
                 object? result = null;
 
@@ -105,9 +98,13 @@ public partial class Program
                         Log("Processing 'initialize'...");
                         result = new
                         {
-                            protocolVersion = "2024-11-05",
-                            capabilities = new { tools = new { } },
-                            serverInfo = new { name = "css-utility-mcp", version = "2.0.0" }
+                            protocolVersion = "2024-11-05", // Assuming 2024-11-05 as per older code
+                            capabilities = new
+                            {
+                                tools = new { listChanged = true },
+                                resources = new { listChanged = true, subscribe = true }
+                            },
+                            serverInfo = new { name = "CssClassutility", version = "1.0.0" }
                         };
                         break;
 
@@ -116,14 +113,12 @@ public partial class Program
                         continue;
 
                     case "tools/list":
-                        Log("Processing 'tools/list'...");
                         result = new { tools = GetToolDefinitions() };
                         break;
 
                     case "tools/call":
                         try
                         {
-                            Log($"Processing tool call: {request.Params}");
                             result = HandleToolCall(request.Params);
                         }
                         catch (Exception toolEx)
@@ -138,6 +133,8 @@ public partial class Program
                             continue;
                         }
                         break;
+
+
                 }
 
                 if (result != null)
@@ -152,6 +149,12 @@ public partial class Program
             Log($"[FATAL ERROR]: {ex}");
         }
     }
+    
+    // ...
+
+
+
+
 
     /// <summary>
     /// 取得所有工具定義

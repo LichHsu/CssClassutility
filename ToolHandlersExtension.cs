@@ -284,6 +284,7 @@ public partial class Program
                     properties = new
                     {
                         sourcePaths = new { type = "array", items = new { type = "string" }, description = "來源 CSS 檔案路徑列表 (可選)" },
+                        sourcePathsFile = new { type = "string", description = "包含來源路徑的檔案 (JSON 陣列或純文字行) (優先於 sourcePaths)" },
                         sourceDirectory = new { type = "string", description = "來源目錄路徑 (可選)" },
                         targetPath = new { type = "string", description = "目標 CSS 檔案路徑" },
                         strategy = new { type = "string", @enum = new[] { "Overwrite", "FillMissing" }, description = "合併策略" }
@@ -307,6 +308,23 @@ public partial class Program
                         ignorePaths = new { type = "array", items = new { type = "string" }, description = "要忽略的目錄名稱 (預設 bin, obj, node_modules)" }
                     },
                     required = new[] { "cssPath", "projectRoot" }
+                }
+            },
+            // 31. check_missing_classes
+            new
+            {
+                name = "check_missing_classes",
+                description = "檢查提供的 Class 列表是否存在於指定的 Global CSS 檔案中。",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        cssPath = new { type = "string", description = "Global/Theme CSS 檔案路徑" },
+                        classes = new { type = "array", items = new { type = "string" }, description = "要檢查的 Class 列表 (可選)" },
+                        classesFilePath = new { type = "string", description = "包含 Class 列表的檔案路徑 (JSON 陣列或純文字行) (優先於 classes)" }
+                    },
+                    required = new[] { "cssPath" }
                 }
             }
         ];
@@ -337,6 +355,7 @@ public partial class Program
             "list_css_sessions" => HandleListCssSessions(args),
             "consolidate_css_files" => HandleConsolidateCssFiles(args),
             "analyze_css_usage" => HandleAnalyzeCssUsage(args),
+            "check_missing_classes" => HandleCheckMissingClasses(args),
             _ => null // 不是擴充工具
         };
     }
@@ -496,6 +515,13 @@ public partial class Program
         string strategyStr = args.TryGetProperty("strategy", out var s) ? s.GetString() ?? "Overwrite" : "Overwrite";
         var strategy = Enum.Parse<MergeStrategy>(strategyStr, true);
 
+        // Check for file-based input first (Standardization)
+        if (args.TryGetProperty("sourcePathsFile", out var spf))
+        {
+             string pathsFile = spf.GetString()!;
+             return CssMerger.BatchMerge(pathsFile, targetPath, strategy);
+        }
+
         var sourcePaths = new List<string>();
 
         if (args.TryGetProperty("sourcePaths", out var paths))
@@ -518,7 +544,7 @@ public partial class Program
 
         if (sourcePaths.Count == 0)
         {
-            throw new ArgumentException("必須提供 sourcePaths 或 sourceDirectory");
+            throw new ArgumentException("必須提供 sourcePaths, sourcePathsFile 或 sourceDirectory");
         }
 
         return CssMerger.BatchMerge(sourcePaths.Distinct(), targetPath, strategy);
@@ -546,6 +572,41 @@ public partial class Program
         }
 
         var result = CssUsageAnalyzer.AnalyzeUsage(cssPath, projectRoot, fileExtensions, ignorePaths);
+        return JsonSerializer.Serialize(result, _jsonPrettyOptions);
+    }
+
+    private static string HandleCheckMissingClasses(JsonElement args)
+    {
+        string cssPath = args.GetProperty("cssPath").GetString()!;
+        var classes = new List<string>();
+
+        if (args.TryGetProperty("classesFilePath", out var cfp))
+        {
+            string filePath = cfp.GetString()!;
+            if (File.Exists(filePath))
+            {
+               string content = File.ReadAllText(filePath);
+               if (content.TrimStart().StartsWith("["))
+               {
+                    try { classes.AddRange(JsonSerializer.Deserialize<string[]>(content) ?? Array.Empty<string>()); }
+                    catch { classes.AddRange(File.ReadLines(filePath)); }
+               }
+               else
+               {
+                   classes.AddRange(File.ReadLines(filePath));
+               }
+            }
+        }
+        else if (args.TryGetProperty("classes", out var c))
+        {
+            foreach (var item in c.EnumerateArray())
+            {
+                var s = item.GetString();
+                if (s != null) classes.Add(s);
+            }
+        }
+        
+        var result = CssConsistencyChecker.CheckMissingClasses(cssPath, classes);
         return JsonSerializer.Serialize(result, _jsonPrettyOptions);
     }
 }
