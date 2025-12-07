@@ -1,43 +1,52 @@
-# CssClassUtility
+# CssClassUtility (CSS 樣式工具)
 
-A powerful MCP server for analyzing, processing, and consolidating CSS files.
-Now supports strongly-typed parameters for enhanced AI interaction.
+這是一個強大的 MCP 伺服器，專門用於分析、處理與合併 CSS 檔案。
+支援強型別參數，提升 AI 互動的準確性。
 
-## Tools
+## 可用工具 (Tools)
 
 ### 1. `analyze_css`
-Analyzes CSS content and usage.
-*   **Parameters**:
-    *   `path` (string): Path to file or directory.
-    *   `analysisType` (string):
-        *   `Variables`: Suggests variables from repeated values.
-        *   `Components`: Groups selectors by common prefixes.
-        *   `Missing`: Finds classes used in `classesToCheck` but missing in CSS.
-        *   `Usage`: Traces usage of a class in the project.
-    *   `options`: (Object)
-        *   `threshold`: Min frequency for variable suggestion.
-        *   `classesToCheck`: List of class names (for Missing).
-        *   `className`: Target class (for Usage).
-        *   `projectRoot`: Search scope (for Usage).
+分析 CSS 內容與使用狀況。
+*   **參數**:
+    *   `path` (string): 目標 CSS 檔案路徑或目錄。
+    *   `analysisType` (string): 分析類型。
+        *   `Variables`: 建議從重複值中提取變數。
+        *   `Components`: 根據前綴分組組件。
+        *   `Missing`: 尋找在 `classesToCheck` 中使用但 CSS 缺失的類別。
+        *   `Usage`: 追蹤特定類別在專案中的使用狀況。
+    *   `options`: (Object, 選填)
+        *   `threshold`: 變數建議的最小頻率閾值。
+        *   `classesToCheck`: 檢查列表 (用於 Missing 分析)。
+        *   `className`: 目標類別名稱 (用於 Usage 分析)。
+        *   `projectRoot`: 搜尋範圍 (用於 Usage 分析)。
 
 ### 2. `edit_css`
-Batch edits CSS files (In-Memory Processing).
-*   **Parameters**:
-    *   `path` (string): Path to CSS file.
-    *   `operations`: (List of Objects)
-        *   `op`: `Set`, `Remove` (property), `Remove` (class).
-        *   `className`: Target CSS class (e.g., `btn-primary`).
-        *   `key`: CSS property (e.g., `color`).
-        *   `value`: CSS value.
-        *   `source`: Source file path (for Merge op).
-        *   `strategy`: `Overwrite`, `FillMissing`.
+批次編輯 CSS 檔案 (記憶體內處理)。
+*   **參數**:
+    *   `path` (string): 目標 CSS 檔案路徑。
+    *   `operations`: (List of Objects, 操作列表)
+        *   `op`: 操作 (`Set` 設定屬性, `Remove` 移除屬性/類別)。
+        *   `className`: 目標 CSS 類別 (例如 `.btn-primary`)。
+        *   `key`: CSS 屬性名稱 (例如 `color`)。
+        *   `value`: CSS 屬性值。
+        *   `source`: 來源檔案路徑 (用於合併操作)。
+        *   `strategy`: 合併策略 (`Overwrite`, `FillMissing`)。
 
 ### 3. `consolidate_css`
-Merges multiple CSS files into one.
-*   **Parameters**:
-    *   `sourceFiles` (List<string>): List of paths to merge.
-    *   `outputFile` (string): Destination path.
+合併多個 CSS 檔案至單一檔案。
+*   **參數**:
+    *   `sourceFiles` (List<string>): 來源檔案路徑列表。
+    *   `outputFile` (string): 輸出路徑。
 
-## Development
-Run `dotnet build` to compile.
-Run `CssClassUtility.exe --test` to execute internal unit tests.
+## 命令列介面 (CLI)
+
+本工具亦支援直接透過 CLI 執行審查：
+
+```bash
+# 執行 CSS 審查 (檢查重複定義、空規則等)
+CssClassUtility.exe audit css --path "你的 CSS 檔案或目錄"
+```
+
+## 開發與測試
+*   執行 `dotnet build` 進行編譯。
+*   執行 `CssClassUtility.exe --test` 運行內部單元測試。
