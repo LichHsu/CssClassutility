@@ -48,8 +48,8 @@ public static class CliHandler
              return;
         }
 
-        var cssFiles = Directory.GetFiles(path, "*.css", SearchOption.AllDirectories);
-        Console.WriteLine($"Found {cssFiles.Length} CSS files.");
+        var cssFiles = GetFilesRecursively(path, "*.css");
+        Console.WriteLine($"Found {cssFiles.Count} CSS files.");
         Console.WriteLine("---------------------------------------------------");
 
         int totalErrors = 0;
@@ -109,7 +109,7 @@ public static class CliHandler
 
         Console.WriteLine("---------------------------------------------------");
         Console.WriteLine("Audit Complete.");
-        Console.WriteLine($"Files Scanned: {cssFiles.Length}");
+        Console.WriteLine($"Files Scanned: {cssFiles.Count}");
         Console.WriteLine($"Total Classes: {totalClasses}");
         
         if (totalErrors > 0) Console.ForegroundColor = ConsoleColor.Red;
@@ -126,5 +126,37 @@ public static class CliHandler
              Console.WriteLine("\nResult: CLEAN. No structural issues found.");
              Console.ResetColor();
         }
+    }
+
+    private static List<string> GetFilesRecursively(string path, string searchPattern)
+    {
+        var result = new List<string>();
+        try
+        {
+            foreach (var file in Directory.GetFiles(path, searchPattern))
+            {
+                var fileName = Path.GetFileName(file);
+                if (fileName.StartsWith(".")) continue;
+                result.Add(file);
+            }
+
+            foreach (var dir in Directory.GetDirectories(path))
+            {
+                var dirName = Path.GetFileName(dir);
+                if (dirName.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
+                    dirName.Equals("obj", StringComparison.OrdinalIgnoreCase) ||
+                    dirName.StartsWith("."))
+                {
+                    continue;
+                }
+                result.AddRange(GetFilesRecursively(dir, searchPattern));
+            }
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Warning] Failed to scan directory {path}: {ex.Message}");
+        }
+        return result;
     }
 }
