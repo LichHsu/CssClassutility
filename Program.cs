@@ -29,6 +29,12 @@ internal class Program
             return;
         }
 
+        if (args.Length >= 2 && args[0].ToLower() == "audit")
+        {
+            CssClassUtility.Core.CliHandler.Handle(args);
+            return;
+        }
+
         var server = new McpServer("css-class-utility", "2.1.0");
         server.RegisterToolsFromAssembly(System.Reflection.Assembly.GetExecutingAssembly());
         await server.RunAsync(args);
