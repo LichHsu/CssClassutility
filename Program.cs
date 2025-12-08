@@ -6,6 +6,7 @@ using Lichs.MCP.Core.Attributes;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static Lichs.MCP.Core.McpServer;
 
 namespace CssClassUtility;
 
@@ -35,8 +36,37 @@ internal class Program
             return;
         }
 
-        var server = new McpServer("css-class-utility", "2.1.0");
+        var server = new McpServer("css-class-utility", "2.2.0");
         server.RegisterToolsFromAssembly(System.Reflection.Assembly.GetExecutingAssembly());
+
+        // Register Resource Handler
+        server.RegisterResourceHandler(
+            listHandler: () => new List<ResourceInfo>(), // Listing all files is not feasible, return empty or predefined
+            readHandler: (uri) =>
+            {
+                // Simple implementation: Treat URI as file path
+                // Remove 'file:///' prefix if present for cross-platform compatibility or simple usage
+                string path = uri;
+                if (uri.StartsWith("file:///")) path = uri.Substring(8);
+                else if (uri.StartsWith("file://")) path = uri.Substring(7);
+
+                // Decode URI
+                path = System.Net.WebUtility.UrlDecode(path);
+
+                if (File.Exists(path))
+                {
+                    return new ResourceContent(uri, "text/css", File.ReadAllText(path));
+                }
+                // Try relative path from cwd? 
+                if (File.Exists(Path.GetFullPath(path)))
+                {
+                    return new ResourceContent(uri, "text/css", File.ReadAllText(Path.GetFullPath(path)));
+                }
+
+                return null;
+            }
+        );
+
         await server.RunAsync(args);
     }
 
