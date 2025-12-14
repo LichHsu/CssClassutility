@@ -13,14 +13,13 @@ public static class DuplicateDetector
     public static List<DuplicateClassInfo> GetDuplicateClasses(string path)
     {
         var classes = CssParser.GetClasses(path);
-        return classes.GroupBy(c => c.ClassName)
+        return [.. classes.GroupBy(c => c.ClassName)
             .Where(g => g.Count() > 1)
             .Select(g => new DuplicateClassInfo
             {
                 ClassName = g.Key,
                 Count = g.Count(),
-                Selectors = g.Select(c => c.Selector).Distinct().ToList()
-            })
-            .ToList();
+                Selectors = [.. g.Select(c => c.Selector).Distinct()]
+            })];
     }
 }

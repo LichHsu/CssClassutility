@@ -38,6 +38,12 @@
     *   `sourceFiles` (List<string>): 來源檔案路徑列表。
     *   `outputFile` (string): 輸出路徑。
 
+### 4. `deduplicate_css`
+自動合併並清理 CSS 檔案中的重複定義。
+*   **參數**:
+    *   `path` (string): 目標 CSS 檔案路徑。
+    *   **說明**: 若 CSS 中存在選擇器與上下文 (Context) 完全相同的重複區塊，此工具會將其合併為單一區塊，後定義的屬性會覆蓋先定義的屬性。
+
 ## 命令列介面 (CLI)
 
 本工具亦支援直接透過 CLI 執行審查：
@@ -45,6 +51,9 @@
 ```bash
 # 執行 CSS 審查 (檢查重複定義、空規則等)
 CssClassUtility.exe audit css --path "你的 CSS 檔案或目錄"
+
+# 執行 CSS 去重 (清理重複的 Class 定義)
+CssClassUtility.exe deduplicate_css --path "你的 CSS 檔案"
 ```
 
 ## 開發與測試
