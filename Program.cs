@@ -36,6 +36,24 @@ internal class Program
             return;
         }
 
+        if (args.Length >= 2 && args[0].ToLower() == "deduplicate_css")
+        {
+            string path = "";
+            for (int i = 1; i < args.Length; i++)
+            {
+                if (args[i] == "--path" && i + 1 < args.Length) path = args[i + 1];
+            }
+            if (File.Exists(path))
+            {
+                Console.WriteLine(CssDeduplicator.Deduplicate(path));
+            }
+            else
+            {
+                Console.WriteLine("Error: File not found or usage incorrect. Usage: deduplicate_css --path <file>");
+            }
+            return;
+        }
+
         var server = new McpServer("css-class-utility", "2.2.0");
         server.RegisterToolsFromAssembly(System.Reflection.Assembly.GetExecutingAssembly());
 
@@ -151,5 +169,11 @@ internal class Program
         return $"已合併 {sourceFiles.Count} 個檔案至 {outputFile}";
     }
 
-    // purge_css and get_css_info can remain simpler or also use options if needed
+    [McpTool("deduplicate_css", "自動合併並清理 CSS 檔案中的重複定義 (Deduplication)")]
+    public static string DeduplicateCss(
+        [McpParameter("目標 CSS 檔案路徑")] string path)
+    {
+        return CssDeduplicator.Deduplicate(path);
+    }
+
 }
