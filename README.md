@@ -13,10 +13,12 @@
         *   `Variables`: 建議從重複值中提取變數。
         *   `Components`: 根據前綴分組組件。
         *   `Missing`: 尋找在 `classesToCheck` 中使用但 CSS 缺失的類別。
+        *   `Unused`: 尋找在 CSS 中定義但未在 `KnownUsedClasses` 中出現的類別 (被動式分析)。
         *   `Usage`: 追蹤特定類別在專案中的使用狀況。
     *   `options`: (Object, 選填)
         *   `threshold`: 變數建議的最小頻率閾值。
         *   `classesToCheck`: 檢查列表 (用於 Missing 分析)。
+        *   `KnownUsedClasses`: 已知使用的類別列表 (用於 Unused 分析)。
         *   `className`: 目標類別名稱 (用於 Usage 分析)。
         *   `projectRoot`: 搜尋範圍 (用於 Usage 分析)。
 

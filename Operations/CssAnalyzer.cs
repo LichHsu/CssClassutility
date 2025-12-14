@@ -26,4 +26,33 @@ public static class CssAnalyzer
 
         return missing;
     }
+
+    /// <summary>
+    /// 找出那些「在 CSS 中定義，但未被使用」的 Class (需提供已知使用列表)
+    /// </summary>
+    /// <param name="cssPath">CSS 檔案路徑</param>
+    /// <param name="knownUsedClasses">已知被使用的 Class 列表</param>
+    /// <returns>未使用的 Class 列表</returns>
+    public static List<string> FindUnusedClasses(string cssPath, List<string> knownUsedClasses)
+    {
+        if (!File.Exists(cssPath)) throw new FileNotFoundException("CSS File not found", cssPath);
+
+        // 建立已知使用的 HashSet (不分大小寫)
+        var usedSet = knownUsedClasses
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // 取得 CSS 中定義的所有類別名稱
+        var definedClasses = CssParser.GetClasses(cssPath)
+            .Select(c => c.ClassName)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        // 過濾出未使用的
+        var unused = definedClasses
+            .Where(c => !usedSet.Contains(c))
+            .OrderBy(c => c)
+            .ToList();
+
+        return unused;
+    }
 }

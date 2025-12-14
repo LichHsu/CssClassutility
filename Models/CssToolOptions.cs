@@ -8,6 +8,7 @@ public class CssAnalysisOptions
     public List<string>? ClassesToCheck { get; set; }
     public string? ClassName { get; set; }
     public string? ProjectRoot { get; set; }
+    public List<string>? KnownUsedClasses { get; set; }
 }
 
 public class CssEditOperation

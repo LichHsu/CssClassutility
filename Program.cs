@@ -110,6 +110,12 @@ internal class Program
             var orphans = CssAnalyzer.FindMissingClasses(path, options.ClassesToCheck);
             return JsonSerializer.Serialize(orphans, _jsonPrettyOptions);
         }
+        else if (analysisType.Equals("Unused", StringComparison.OrdinalIgnoreCase))
+        {
+            if (options.KnownUsedClasses == null) throw new ArgumentException("Unused 分析需要 KnownUsedClasses");
+            var unused = CssAnalyzer.FindUnusedClasses(path, options.KnownUsedClasses);
+            return JsonSerializer.Serialize(unused, _jsonPrettyOptions);
+        }
         else if (analysisType.Equals("Usage", StringComparison.OrdinalIgnoreCase))
         {
             // Usage Analysis (Requires Project Root)

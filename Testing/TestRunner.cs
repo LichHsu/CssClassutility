@@ -564,6 +564,31 @@ public static class TestRunner
             failedTests++;
         }
 
+        // === 測試 27: FindUnusedClasses ===
+        totalTests++;
+        try
+        {
+            Log("[測試 27] FindUnusedClasses");
+            string tempCss = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestUnused.css");
+            File.WriteAllText(tempCss, ".used { color: red; } .unused { color: blue; }");
+            
+            var knownUsed = new List<string> { "used" };
+            var unused = CssAnalyzer.FindUnusedClasses(tempCss, knownUsed);
+
+            if (!unused.Contains("unused")) throw new Exception("未能偵測到 unused class");
+            if (unused.Contains("used")) throw new Exception("錯誤標記 used class 為 unused");
+
+            Console.WriteLine($"✓ 測試 27: FindUnusedClasses - 成功辨識未使用 Class");
+            File.Delete(tempCss);
+            passedTests++;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ 測試 27 失敗: {ex.Message}");
+            Log($"[錯誤] 測試 27: {ex}");
+            failedTests++;
+        }
+
         // 輸出測試摘要
         Console.WriteLine("\n========== 測試摘要 ==========");
         Console.WriteLine($"總測試數: {totalTests}");
